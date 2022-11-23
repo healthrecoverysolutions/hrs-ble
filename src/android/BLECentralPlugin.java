@@ -141,11 +141,23 @@ public class BLECentralPlugin extends CordovaPlugin {
     // Bluetooth state notification
     CallbackContext stateCallback;
     BroadcastReceiver stateReceiver;
+
+    CallbackContext bondStateCallback;
+    BroadcastReceiver bondStateReceiver;
+    public int bondedState;
+    BluetoothDevice device;
+
     Map<Integer, String> bluetoothStates = new Hashtable<Integer, String>() {{
         put(BluetoothAdapter.STATE_OFF, "off");
         put(BluetoothAdapter.STATE_TURNING_OFF, "turningOff");
         put(BluetoothAdapter.STATE_ON, "on");
         put(BluetoothAdapter.STATE_TURNING_ON, "turningOn");
+    }};
+
+    Map<Integer, String> bluetoothBondStates = new Hashtable<Integer, String>() {{
+        put(BluetoothDevice.BOND_NONE, "none");
+        put(BluetoothDevice.BOND_BONDED, "bonded");
+        put(BluetoothDevice.BOND_BONDING, "bonding");
     }};
 
     CallbackContext locationStateCallback;
@@ -163,6 +175,7 @@ public class BLECentralPlugin extends CordovaPlugin {
     public void onDestroy() {
         removeStateListener();
         removeLocationStateListener();
+        removeBondStateListener();
         for(Peripheral peripheral : peripherals.values()) {
             peripheral.disconnect();
         }
@@ -172,6 +185,7 @@ public class BLECentralPlugin extends CordovaPlugin {
     public void onReset() {
         removeStateListener();
         removeLocationStateListener();
+        removeBondStateListener();
         for(Peripheral peripheral : peripherals.values()) {
             peripheral.disconnect();
         }
@@ -351,6 +365,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             } else {
                 this.stateCallback = callbackContext;
                 addStateListener();
+                addBondStateListener();
                 sendBluetoothStateChange(bluetoothAdapter.getState());
             }
 
@@ -364,6 +379,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 this.stateCallback = null;
             }
             removeStateListener();
+            removeBondStateListener();
             callbackContext.success();
 
         } else if (action.equals(START_LOCATION_STATE_NOTIFICATIONS)) {
@@ -593,24 +609,31 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     private void onBluetoothStateChange(Intent intent) {
         final String action = intent.getAction();
+        LOG.d("testing onBluetoothStateChange", action);
 
         if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
             final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
             sendBluetoothStateChange(state);
             if (state == BluetoothAdapter.STATE_OFF) {
-               // #894 When Bluetooth is physically turned off the whole process might die, so the normal
+                // #894 When Bluetooth is physically turned off the whole process might die, so the normal
                 // onConnectionStateChange callbacks won't be invoked
-                
+
                 BluetoothManager bluetoothManager = (BluetoothManager) cordova.getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
                 for(Peripheral peripheral : peripherals.values()) {
                     if (!peripheral.isConnected()) continue;
-                    
+
                     int connectedState = bluetoothManager.getConnectionState(peripheral.getDevice(), BluetoothProfile.GATT);
                     if (connectedState == BluetoothProfile.STATE_DISCONNECTED) {
                         peripheral.peripheralDisconnected("Bluetooth Disabled");
                     }
                 }
             }
+        } else if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
+            LOG.d("testing receiver action before", String.valueOf(bondedState));
+            device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            bondedState = device.getBondState();
+            LOG.d("testing receiver action after", String.valueOf(bondedState));
+            sendBluetoothBondStateChange(bondedState);
         }
     }
 
@@ -619,6 +642,14 @@ public class BLECentralPlugin extends CordovaPlugin {
             PluginResult result = new PluginResult(PluginResult.Status.OK, this.bluetoothStates.get(state));
             result.setKeepCallback(true);
             this.stateCallback.sendPluginResult(result);
+        }
+    }
+
+    private void sendBluetoothBondStateChange(int state) {
+        if (this.bondStateCallback != null) {
+            PluginResult result = new PluginResult(PluginResult.Status.OK, this.bluetoothBondStates.get(state));
+            result.setKeepCallback(true);
+            this.bondStateCallback.sendPluginResult(result);
         }
     }
 
@@ -638,6 +669,36 @@ public class BLECentralPlugin extends CordovaPlugin {
         } catch (Exception e) {
             LOG.e(TAG, "Error registering state receiver: " + e.getMessage(), e);
         }
+    }
+
+    private void addBondStateListener() {
+        if (this.bondStateReceiver == null) {
+            this.bondStateReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    onBluetoothStateChange(intent);
+                }
+            };
+        }
+
+        try {
+            IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+            webView.getContext().registerReceiver(this.bondStateReceiver, intentFilter);
+        } catch (Exception e) {
+            LOG.e(TAG, "Error registering bond state receiver: " + e.getMessage(), e);
+        }
+    }
+
+    private void removeBondStateListener() {
+        if (this.bondStateReceiver != null) {
+            try {
+                webView.getContext().unregisterReceiver(this.bondStateReceiver);
+            } catch (Exception e) {
+                LOG.e(TAG, "Error unregistering bond state receiver: " + e.getMessage(), e);
+            }
+        }
+        this.bondStateCallback = null;
+        this.bondStateReceiver = null;
     }
 
     private void removeStateListener() {
@@ -725,6 +786,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         if (peripheral != null) {
             // #894: BLE adapter state listener required so disconnect can be fired on BLE disabled
             addStateListener();
+            addBondStateListener();
             peripheral.connect(callbackContext, cordova.getActivity(), false);
         } else {
             callbackContext.error("Peripheral " + macAddress + " not found.");
@@ -755,6 +817,9 @@ public class BLECentralPlugin extends CordovaPlugin {
         if (peripheral == null) {
             if (BluetoothAdapter.checkBluetoothAddress(macAddress)) {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
+                LOG.d("testing BLE YO YO YO", String.valueOf(device));
+                LOG.d("testing BLE YO YO YO BONDED BONDED", String.valueOf(bondedState));
+
                 peripheral = new Peripheral(device);
                 peripherals.put(device.getAddress(), peripheral);
             } else {
@@ -765,7 +830,22 @@ public class BLECentralPlugin extends CordovaPlugin {
 
         // #894: BLE adapter state listener required so disconnect can be fired on BLE disabled
         addStateListener();
-        peripheral.connect(callbackContext, cordova.getActivity(), true);
+        addBondStateListener();
+
+        if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29) {
+            LOG.d("testing bonded BLE 1 state in auto", String.valueOf(bondedState));
+            if (bondedState > 0) {
+                LOG.d("testing bonded BLE 1 state in auto here here", "hello");
+                peripheral.connect(callbackContext, cordova.getActivity(), true);
+            } else {
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
+                LOG.d("testing BLE 3 four YO YO YO", String.valueOf(device));
+                device.createBond();
+                peripheral.connect(callbackContext, cordova.getActivity(), true);
+            }
+        } else {
+            peripheral.connect(callbackContext, cordova.getActivity(), true);
+        }
 
     }
 
@@ -1186,7 +1266,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             LOG.d(TAG, "Stopping Scan");
             try {
                 final BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
-                if (bluetoothLeScanner != null) 
+                if (bluetoothLeScanner != null)
                     bluetoothLeScanner.stopScan(leScanCallback);
             } catch (Exception e) {
                 LOG.e(TAG, "Exception stopping scan", e);

@@ -846,7 +846,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         addStateListener();
         addBondStateListener();
 
-        if (true/*COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29*/) {
+        if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29) {
             LOG.d(TAG, "testing bonded BLE 1 state in auto" + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
                 LOG.d(TAG, "testing bonded BLE 1 state in auto here here hello");

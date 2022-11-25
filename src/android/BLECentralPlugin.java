@@ -163,6 +163,17 @@ public class BLECentralPlugin extends CordovaPlugin {
     CallbackContext locationStateCallback;
     BroadcastReceiver locationStateReceiver;
 
+    public void setPairingCallback(PairingCallback pairingCallback) {
+        this.pairingCallback = pairingCallback;
+    }
+
+    PairingCallback pairingCallback;
+
+    interface PairingCallback{
+        void onPairingCompleted(BluetoothDevice device, int bondedState);
+    }
+
+
     @Override
     protected void pluginInitialize() {
         if (COMPILE_SDK_VERSION == -1) {
@@ -609,7 +620,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     private void onBluetoothStateChange(Intent intent) {
         final String action = intent.getAction();
-        LOG.d("testing onBluetoothStateChange", action);
+        LOG.d(TAG, "testing onBluetoothStateChange" + action);
 
         if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
             final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
@@ -629,11 +640,14 @@ public class BLECentralPlugin extends CordovaPlugin {
                 }
             }
         } else if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
-            LOG.d("testing receiver action before", String.valueOf(bondedState));
+            LOG.d(TAG, "testing receiver action before" + String.valueOf(bondedState));
             device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             bondedState = device.getBondState();
-            LOG.d("testing receiver action after", String.valueOf(bondedState));
+            LOG.d(TAG, "testing receiver action after" + String.valueOf(bondedState));
             sendBluetoothBondStateChange(bondedState);
+            if(pairingCallback != null){
+                pairingCallback.onPairingCompleted(device, bondedState);
+            }
         }
     }
 
@@ -817,8 +831,8 @@ public class BLECentralPlugin extends CordovaPlugin {
         if (peripheral == null) {
             if (BluetoothAdapter.checkBluetoothAddress(macAddress)) {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
-                LOG.d("testing BLE YO YO YO", String.valueOf(device));
-                LOG.d("testing BLE YO YO YO BONDED BONDED", String.valueOf(bondedState));
+                LOG.d(TAG, "testing BLE YO YO YO"+ device);
+                LOG.d(TAG, "testing BLE YO YO YO BONDED BONDED"+ bondedState);
 
                 peripheral = new Peripheral(device);
                 peripherals.put(device.getAddress(), peripheral);
@@ -832,16 +846,23 @@ public class BLECentralPlugin extends CordovaPlugin {
         addStateListener();
         addBondStateListener();
 
-        if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29) {
-            LOG.d("testing bonded BLE 1 state in auto", String.valueOf(bondedState));
-            if (bondedState > 0) {
-                LOG.d("testing bonded BLE 1 state in auto here here", "hello");
+        if (true/*COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29*/) {
+            LOG.d(TAG, "testing bonded BLE 1 state in auto" + peripheral.getDevice().getBondState());
+            if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+                LOG.d(TAG, "testing bonded BLE 1 state in auto here here hello");
                 peripheral.connect(callbackContext, cordova.getActivity(), true);
             } else {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
-                LOG.d("testing BLE 3 four YO YO YO", String.valueOf(device));
+                LOG.d(TAG, "testing BLE 3 four YO YO YO" + peripheral.getDevice());
+                setPairingCallback((btDevice, bondedState) -> {
+                    LOG.d(TAG, "onPairingComplete Callback:" + btDevice);
+                    if(bondedState == BluetoothDevice.BOND_BONDED) {
+                        LOG.d(TAG, "onPairingComplete Initiate GattConnect:" + btDevice);
+                        Peripheral peripheralDevice = new Peripheral(btDevice);
+                        peripheralDevice.connect(callbackContext, cordova.getActivity(), true);
+                    }
+                });
                 device.createBond();
-                peripheral.connect(callbackContext, cordova.getActivity(), true);
             }
         } else {
             peripheral.connect(callbackContext, cordova.getActivity(), true);

@@ -855,6 +855,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 peripheral.connect(callbackContext, cordova.getActivity(), true);
             } else {
                 LOG.d(TAG, "testing BLE 3 four YO YO YO" + peripheral.getDevice());
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
                 setPairingCallback((btDevice, bondedState) -> {
                     LOG.d(TAG, "onPairingComplete Callback:" + btDevice);
                     if(bondedState == BluetoothDevice.BOND_BONDED) {

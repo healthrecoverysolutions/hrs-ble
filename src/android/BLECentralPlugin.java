@@ -845,14 +845,15 @@ public class BLECentralPlugin extends CordovaPlugin {
         // #894: BLE adapter state listener required so disconnect can be fired on BLE disabled
         addStateListener();
         addBondStateListener();
+        BluetoothDevice pairedDevice;
+        pairedDevice = bluetoothAdapter.getRemoteDevice(macAddress);
 
-        if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29) {
+        if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29 && pairedDevice.getName().contains("UA-651")) {
             LOG.d(TAG, "testing bonded BLE 1 state in auto" + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
                 LOG.d(TAG, "testing bonded BLE 1 state in auto here here hello");
                 peripheral.connect(callbackContext, cordova.getActivity(), true);
             } else {
-                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
                 LOG.d(TAG, "testing BLE 3 four YO YO YO" + peripheral.getDevice());
                 setPairingCallback((btDevice, bondedState) -> {
                     LOG.d(TAG, "onPairingComplete Callback:" + btDevice);

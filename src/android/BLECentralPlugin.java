@@ -620,7 +620,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     private void onBluetoothStateChange(Intent intent) {
         final String action = intent.getAction();
-        LOG.d(TAG, "testing onBluetoothStateChange" + action);
+        LOG.d(TAG, "onBluetoothStateChange" + action);
 
         if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
             final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
@@ -640,10 +640,8 @@ public class BLECentralPlugin extends CordovaPlugin {
                 }
             }
         } else if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
-            LOG.d(TAG, "testing receiver action before" + String.valueOf(bondedState));
             device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             bondedState = device.getBondState();
-            LOG.d(TAG, "testing receiver action after" + String.valueOf(bondedState));
             sendBluetoothBondStateChange(bondedState);
             if(pairingCallback != null){
                 pairingCallback.onPairingCompleted(device, bondedState);
@@ -831,8 +829,8 @@ public class BLECentralPlugin extends CordovaPlugin {
         if (peripheral == null) {
             if (BluetoothAdapter.checkBluetoothAddress(macAddress)) {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
-                LOG.d(TAG, "testing BLE YO YO YO"+ device);
-                LOG.d(TAG, "testing BLE YO YO YO BONDED BONDED"+ bondedState);
+                LOG.d(TAG, "Device Mac Address" + device);
+                LOG.d(TAG, "Bond State"+ bondedState);
 
                 peripheral = new Peripheral(device);
                 peripherals.put(device.getAddress(), peripheral);
@@ -849,12 +847,10 @@ public class BLECentralPlugin extends CordovaPlugin {
         pairedDevice = bluetoothAdapter.getRemoteDevice(macAddress);
 
         if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29 && pairedDevice.getName().contains("UA-651")) {
-            LOG.d(TAG, "testing bonded BLE 1 state in auto" + peripheral.getDevice().getBondState());
+            LOG.d(TAG, "Bond State for Version > 29" + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-                LOG.d(TAG, "testing bonded BLE 1 state in auto here here hello");
                 peripheral.connect(callbackContext, cordova.getActivity(), true);
             } else {
-                LOG.d(TAG, "testing BLE 3 four YO YO YO" + peripheral.getDevice());
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
                 setPairingCallback((btDevice, bondedState) -> {
                     LOG.d(TAG, "onPairingComplete Callback:" + btDevice);

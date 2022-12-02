@@ -846,7 +846,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         BluetoothDevice pairedDevice;
         pairedDevice = bluetoothAdapter.getRemoteDevice(macAddress);
 
-        if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29 && pairedDevice.getName().contains("UA-651")) {
+        if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29 && (pairedDevice.getName().contains("UA-651") || pairedDevice.getName().contains("UC-352")) {
             LOG.d(TAG, "Bond State for Version > 29" + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
                 peripheral.connect(callbackContext, cordova.getActivity(), true);

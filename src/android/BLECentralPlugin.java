@@ -871,18 +871,25 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     }
 
-    private void disconnect(CallbackContext callbackContext, String macAddress) {
-
+    private void disconnect(CallbackContext callbackContext, String macAddress) throws Exception {
         Peripheral peripheral = peripherals.get(macAddress);
+        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
         if (peripheral != null) {
             peripheral.disconnect();
+            try {
+                Method method = device.getClass().getMethod("removeBond", (Class[]) null);
+                method.invoke(device, (Object[]) null);
+                LOG.i(TAG, "Successfully removed bond");
+            } catch (Exception e) {
+                LOG.e(TAG, "ERROR: could not remove bond");
+                e.printStackTrace();
+            }
             callbackContext.success();
         } else {
             String message = "Peripheral " + macAddress + " not found.";
             LOG.w(TAG, message);
             callbackContext.error(message);
         }
-
     }
 
     private void queueCleanup(CallbackContext callbackContext, String macAddress) {

@@ -20,6 +20,8 @@ import android.bluetooth.*;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Base64;
+import android.util.Log;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.LOG;
 import org.apache.cordova.PluginResult;
@@ -63,6 +65,7 @@ public class Peripheral extends BluetoothGattCallback {
     private CallbackContext writeCallback;
     private CallbackContext requestMtuCallback;
     private Activity currentActivity;
+    private int disconnectCount = 0;
 
     private Map<String, SequentialCallbackContext> notificationCallbacks = new HashMap<String, SequentialCallbackContext>();
 
@@ -402,6 +405,40 @@ public class Peripheral extends BluetoothGattCallback {
         }
     }
 
+    /**
+     * This enum lists all the BLE devices which dont need Auto connect but require few reconnect attempts when they face Gatt133 connection error
+     * Like, On Samsung Tab A7 , with Welch devices, there was random gatt 133 error while making a connection.
+     * Thus tried to reconnect in case of 133 failure which solves the problem.
+     */
+    public enum AUTO_CONNECT_OFF_DEVICES {
+        WELCH_SC100("SC100"),
+        WELCH_BP100("BP100");
+
+        private String text;
+
+        AUTO_CONNECT_OFF_DEVICES(String text) {
+            this.text = text;
+        }
+
+        public String getText() {
+            return this.text;
+        }
+
+        public static boolean shouldRetryForGatt133Status(BluetoothDevice device) {
+            if(device!=null) {
+                String text = device.getName();
+                if (text != null ) {
+                    for (Peripheral.AUTO_CONNECT_OFF_DEVICES b : Peripheral.AUTO_CONNECT_OFF_DEVICES.values()) {
+                        if (text.indexOf(b.text) > 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
@@ -414,12 +451,36 @@ public class Peripheral extends BluetoothGattCallback {
             gatt.discoverServices();
 
         } else {  // Disconnected
-            LOG.d(TAG, "onConnectionStateChange DISCONNECTED");
-            connected = false;
-            peripheralDisconnected("Peripheral Disconnected");
+            Log.d(TAG, "On connection state change ---> " + status + " disconnect count " + disconnectCount);
 
+            if (AUTO_CONNECT_OFF_DEVICES.shouldRetryForGatt133Status(this.device)) {
+                Log.d(TAG, "Will retry to connect");
+                if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    if (status != 133 || disconnectCount >= 2) { /*If more then 2 count gatt close process*/
+                        disconnectCount = 0;
+                        LOG.d(TAG, "onConnectionStateChange DISCONNECTED");
+                        connected = false;
+                        peripheralDisconnected("Peripheral Disconnected");
+                    } else { /*reconnection goes here*/
+                        disconnectCount++;
+                        if (connected) {
+                            Log.d(TAG, "While retrying after gatt 133, calling to disconnect");
+                            disconnect();
+                        } else {
+                            Log.d(TAG, "While retrying after gatt 133, calling to connect");
+                            if (connectCallback!=null && currentActivity!=null) {
+                                Log.d(TAG, "Gatt 133 error -> Got callback and trying again to connect -->");
+                                connect(connectCallback, currentActivity, false);
+                            }
+                        }
+                    }
+                }
+            } else {
+                LOG.d(TAG, "onConnectionStateChange DISCONNECTED");
+                connected = false;
+                peripheralDisconnected("Peripheral Disconnected");
+            }
         }
-
     }
 
     @Override

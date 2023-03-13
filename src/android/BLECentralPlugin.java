@@ -39,6 +39,7 @@ import android.os.Looper;
 import android.os.Build;
 
 import android.provider.Settings;
+import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -853,7 +854,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         )) {
             LOG.d(TAG, "Bond State for Version > 29" + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-                peripheral.connect(callbackContext, cordova.getActivity(), true);
+                peripheral.connect(callbackContext, cordova.getActivity(), false);// TODO setting this to false to stop auto connecting
             } else {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
                 setPairingCallback((btDevice, bondedState) -> {
@@ -861,13 +862,13 @@ public class BLECentralPlugin extends CordovaPlugin {
                     if(bondedState == BluetoothDevice.BOND_BONDED) {
                         LOG.d(TAG, "onPairingComplete Initiate GattConnect:" + btDevice);
                         Peripheral peripheralDevice = new Peripheral(btDevice);
-                        peripheralDevice.connect(callbackContext, cordova.getActivity(), true);
+                        peripheralDevice.connect(callbackContext, cordova.getActivity(), false); // TODO setting this to false to stop auto connecting
                     }
                 });
                 device.createBond();
             }
         } else {
-            peripheral.connect(callbackContext, cordova.getActivity(), true);
+            peripheral.connect(callbackContext, cordova.getActivity(), false);// TODO setting this to false to stop auto connecting
         }
 
     }

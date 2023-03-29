@@ -43,7 +43,7 @@ public class Peripheral extends BluetoothGattCallback {
     // 0x2902 org.bluetooth.descriptor.gatt.client_characteristic_configuration.xml
     //public final static UUID CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = UUID.fromString("00002902-0000-1000-8000-00805F9B34FB");
     public final static UUID CLIENT_CHARACTERISTIC_CONFIGURATION_UUID = UUIDHelper.uuidFromString("2902");
-    private static final String TAG = "Peripheral";
+    private static final String TAG = "TWI-Peripheral";
 
     private static final int FAKE_PERIPHERAL_RSSI = 0x7FFFFFFF;
 
@@ -88,10 +88,14 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     private void gattConnect() {
+        LOG.d(TAG, "invoking gattConnect()");
 
+        LOG.d(TAG, "gattConnect(), closing previous gatt before connectGatt again");
         closeGatt();
+
         connected = false;
         connecting = true;
+
         queueCleanup();
         callbackCleanup();
 
@@ -102,17 +106,21 @@ public class Peripheral extends BluetoothGattCallback {
             gatt = device.connectGatt(currentActivity, autoconnect, this, BluetoothDevice.TRANSPORT_LE);
         }
 
+        LOG.d(TAG, "gattConnect(), gatt code after connection = " + gatt.hashCode());
     }
 
     public void connect(CallbackContext callbackContext, Activity activity, boolean auto) {
+        LOG.d(TAG, "invoking connect() with autoConnect flag = " + auto);
         currentActivity = activity;
         autoconnect = auto;
         connectCallback = callbackContext;
         if (refreshCallback != null) {
+            LOG.d(TAG, "connect(), will abort refreshDeviceCache due to new connect call");
             refreshCallback.error(this.asJSONObject("refreshDeviceCache aborted due to new connect call"));
             refreshCallback = null;
         }
 
+        LOG.d(TAG, "connect(), will call gattConnect()");
         gattConnect();
 
         PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
@@ -123,6 +131,7 @@ public class Peripheral extends BluetoothGattCallback {
     // the app requested the central disconnect from the peripheral
     // disconnect the gatt, do not call connectCallback.error
     public void disconnect() {
+        LOG.d(TAG, "invoking disconnect()");
         connected = false;
         connecting = false;
         autoconnect = false;
@@ -135,11 +144,13 @@ public class Peripheral extends BluetoothGattCallback {
     // the peripheral disconnected
     // always call connectCallback.error to notify the app
     public void peripheralDisconnected(String message) {
+        LOG.d(TAG, "peripheralDisconnected() message = %s", message);
         connected = false;
         connecting = false;
 
         // don't remove the gatt for autoconnect
         if (!autoconnect) {
+            LOG.d(TAG, "peripheralDisconnected() autoConnect is false, so closing Gatt");
             closeGatt();
         }
 
@@ -150,12 +161,16 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     private void closeGatt() {
+        LOG.d(TAG, "invoking closeGatt()");
+
         BluetoothGatt localGatt;
         synchronized (this) {
             localGatt = this.gatt;
+            LOG.d(TAG, "Will null the local gatt now");
             this.gatt = null;
         }
         if (localGatt != null) {
+            LOG.d(TAG, "closeGatt(), will call disconnect and close on global gatt");
             localGatt.disconnect();
             localGatt.close();
         }
@@ -220,9 +235,8 @@ public class Peripheral extends BluetoothGattCallback {
      * Uses reflection to refresh the device cache. This *might* be helpful if a peripheral changes
      * services or characteristics and does not correctly implement Service Changed 0x2a05
      * on Generic Attribute Service 0x1801.
-     *
+     * <p>
      * Since this uses an undocumented API it's not guaranteed to work.
-     *
      */
     public void refreshDeviceCache(CallbackContext callback, final long timeoutMillis) {
         LOG.d(TAG, "refreshDeviceCache");
@@ -232,7 +246,7 @@ public class Peripheral extends BluetoothGattCallback {
             try {
                 final Method refresh = gatt.getClass().getMethod("refresh");
                 if (refresh != null) {
-                    success = (Boolean)refresh.invoke(gatt);
+                    success = (Boolean) refresh.invoke(gatt);
                     if (success) {
                         this.refreshCallback = callback;
                         Handler handler = new Handler();
@@ -243,7 +257,7 @@ public class Peripheral extends BluetoothGattCallback {
                                 if (gatt != null) {
                                     try {
                                         gatt.discoverServices();
-                                    } catch(Exception e) {
+                                    } catch (Exception e) {
                                         LOG.e(TAG, "refreshDeviceCache Failed after delay", e);
                                     }
                                 }
@@ -253,7 +267,7 @@ public class Peripheral extends BluetoothGattCallback {
                 } else {
                     LOG.w(TAG, "Refresh method not found on gatt");
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 LOG.e(TAG, "refreshDeviceCache Failed", e);
             }
         }
@@ -267,7 +281,7 @@ public class Peripheral extends BluetoothGattCallback {
         return advertisingData == null;
     }
 
-    public JSONObject asJSONObject()  {
+    public JSONObject asJSONObject() {
 
         JSONObject json = new JSONObject();
 
@@ -288,7 +302,7 @@ public class Peripheral extends BluetoothGattCallback {
         return json;
     }
 
-    public JSONObject asJSONObject(String errorMessage)  {
+    public JSONObject asJSONObject(String errorMessage) {
 
         JSONObject json = new JSONObject();
 
@@ -335,7 +349,7 @@ public class Peripheral extends BluetoothGattCallback {
 
                         JSONArray descriptorsArray = new JSONArray();
 
-                        for (BluetoothGattDescriptor descriptor: characteristic.getDescriptors()) {
+                        for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
                             JSONObject descriptorJSON = new JSONObject();
                             descriptorJSON.put("uuid", UUIDHelper.uuidToString(descriptor.getUuid()));
                             descriptorJSON.put("value", descriptor.getValue()); // always blank
@@ -382,6 +396,8 @@ public class Peripheral extends BluetoothGattCallback {
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
 
+        LOG.d(TAG, "onServiceDiscovered(), gatt hashCode = " + gatt.hashCode() + ", status = " + status);
+
         // refreshCallback is a kludge for refreshing services, if it exists, it temporarily
         // overrides the connect callback. Unfortunately this edge case make the code confusing.
 
@@ -425,9 +441,9 @@ public class Peripheral extends BluetoothGattCallback {
         }
 
         public static boolean shouldRetryForGatt133Status(BluetoothDevice device) {
-            if(device!=null) {
+            if (device != null) {
                 String text = device.getName();
-                if (text != null ) {
+                if (text != null) {
                     for (Peripheral.AUTO_CONNECT_OFF_DEVICES b : Peripheral.AUTO_CONNECT_OFF_DEVICES.values()) {
                         if (text.indexOf(b.text) > 0) {
                             return true;
@@ -442,21 +458,31 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
+        LOG.d(TAG, "onConnectionStateChange(), gatt hashcode = " + gatt.hashCode());
+        LOG.d(TAG, "onConnectionStateChange(), status = " + status);
+        LOG.d(TAG, "onConnectionStateChange(), newState = " + newState);
+
         this.gatt = gatt;
 
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             LOG.d(TAG, "onConnectionStateChange CONNECTED");
             connected = true;
             connecting = false;
-            gatt.discoverServices();
+            LOG.d(TAG, "Starting service discovery using local gatt");
+
+            boolean discoveryResult = gatt.discoverServices();
+            LOG.d(TAG, "Service Discovery api result  = " + discoveryResult);
 
         } else {  // Disconnected
             Log.d(TAG, "On connection state change ---> " + status + " disconnect count " + disconnectCount);
 
             if (AUTO_CONNECT_OFF_DEVICES.shouldRetryForGatt133Status(this.device)) {
-                Log.d(TAG, "Will retry to connect");
+                LOG.d(TAG, "onConnectionStateChange(), disconnected and shouldRetryForGatt133Status");
+                LOG.d(TAG, "onConnectionStateChange(), disconnectCount = " + disconnectCount);
+                LOG.d(TAG, "Will retry to connect");
                 if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     if (status != 133 || disconnectCount >= 2) { /*If more then 2 count gatt close process*/
+                        LOG.d(TAG, "onConnectionStateChange() no more retries all status != 133");
                         disconnectCount = 0;
                         LOG.d(TAG, "onConnectionStateChange DISCONNECTED");
                         connected = false;
@@ -464,11 +490,11 @@ public class Peripheral extends BluetoothGattCallback {
                     } else { /*reconnection goes here*/
                         disconnectCount++;
                         if (connected) {
-                            Log.d(TAG, "While retrying after gatt 133, calling to disconnect");
+                            Log.d(TAG, "onConnectionStateChange() while retrying after gatt 133, calling to disconnect");
                             disconnect();
                         } else {
                             Log.d(TAG, "While retrying after gatt 133, calling to connect");
-                            if (connectCallback!=null && currentActivity!=null) {
+                            if (connectCallback != null && currentActivity != null) {
                                 Log.d(TAG, "Gatt 133 error -> Got callback and trying again to connect -->");
                                 connect(connectCallback, currentActivity, false);
                             }
@@ -476,6 +502,7 @@ public class Peripheral extends BluetoothGattCallback {
                     }
                 }
             } else {
+                LOG.d(TAG, "onConnectionStateChange(), disconnected and not shouldRetryForGatt133Status");
                 LOG.d(TAG, "onConnectionStateChange DISCONNECTED");
                 connected = false;
                 peripheralDisconnected("Peripheral Disconnected");
@@ -486,7 +513,9 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        LOG.d(TAG, "onCharacteristicChanged %s", characteristic);
+
+        LOG.d(TAG, "onCharacteristicChanged gatt hashCode = " + gatt.hashCode());
+        LOG.d(TAG, "onCharacteristicChanged %s", characteristic.getUuid());
 
         SequentialCallbackContext callback = notificationCallbacks.get(generateHashKey(characteristic));
 
@@ -498,9 +527,11 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-        LOG.d(TAG, "onCharacteristicRead %s", characteristic);
 
-        synchronized(this) {
+        LOG.d(TAG, "onCharacteristicRead gatt hashCode = " + gatt.hashCode());
+        LOG.d(TAG, "onCharacteristicRead %s, status = %d", characteristic, status);
+
+        synchronized (this) {
             if (readCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     readCallback.success(characteristic.getValue());
@@ -518,9 +549,11 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-        LOG.d(TAG, "onCharacteristicWrite %s", characteristic);
 
-        synchronized(this) {
+        LOG.d(TAG, "onCharacteristicWrite gatt hashCode = " + gatt.hashCode());
+        LOG.d(TAG, "onCharacteristicWrite %s, status = %d", characteristic.getUuid(), status);
+
+        synchronized (this) {
             if (writeCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     writeCallback.success();
@@ -538,7 +571,8 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
-        LOG.d(TAG, "onDescriptorWrite %s", descriptor);
+        LOG.d(TAG, "onDescriptorWrite, gatt hashCode = %d", gatt.hashCode());
+        LOG.d(TAG, "onDescriptorWrite %s, status = %d", descriptor, status);
         if (descriptor.getUuid().equals(CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)) {
             BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
             String key = generateHashKey(characteristic);
@@ -557,8 +591,10 @@ public class Peripheral extends BluetoothGattCallback {
 
     @Override
     public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+        LOG.d(TAG, "onReadRemoteRssi, gatt hashCode = %d", gatt.hashCode());
+        LOG.d(TAG, "onReadRemoteRssi Rssi %d, status = %d", rssi, status);
         super.onReadRemoteRssi(gatt, rssi, status);
-        synchronized(this) {
+        synchronized (this) {
             if (readCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     updateRssi(rssi);
@@ -585,7 +621,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     // This seems way too complicated
     private void registerNotifyCallback(CallbackContext callbackContext, UUID serviceUUID, UUID characteristicUUID) {
-
+        LOG.d(TAG, "registerNotifyCallback(), serviceUUID = %s, charUUID = %s", serviceUUID.toString(), characteristicUUID.toString());
         if (gatt == null) {
             callbackContext.error("BluetoothGatt is null");
             commandCompleted();
@@ -749,7 +785,7 @@ public class Peripheral extends BluetoothGattCallback {
 
         boolean success = false;
 
-        synchronized(this) {
+        synchronized (this) {
             readCallback = callbackContext;
             if (gatt.readCharacteristic(characteristic)) {
                 success = true;
@@ -775,7 +811,7 @@ public class Peripheral extends BluetoothGattCallback {
 
         boolean success = false;
 
-        synchronized(this) {
+        synchronized (this) {
             readCallback = callbackContext;
 
             if (gatt.readRemoteRssi()) {
@@ -843,7 +879,7 @@ public class Peripheral extends BluetoothGattCallback {
 
         characteristic.setValue(data);
         characteristic.setWriteType(writeType);
-        synchronized(this) {
+        synchronized (this) {
             writeCallback = callbackContext;
 
             if (gatt.writeCharacteristic(characteristic)) {
@@ -924,18 +960,18 @@ public class Peripheral extends BluetoothGattCallback {
         synchronized (l2capContexts) {
             contexts = new ArrayList<>(l2capContexts.values());
         }
-        for(L2CAPContext context : contexts) {
+        for (L2CAPContext context : contexts) {
             context.disconnectL2Cap();
         }
     }
 
     public void writeL2CapChannel(CallbackContext callbackContext, int psm, byte[] data) {
-        LOG.d(TAG,"L2CAP Write %s", psm);
+        LOG.d(TAG, "L2CAP Write %s", psm);
         getOrAddL2CAPContext(psm).writeL2CapChannel(callbackContext, data);
     }
 
     private void callbackCleanup() {
-        synchronized(this) {
+        synchronized (this) {
             if (readCallback != null) {
                 readCallback.error(this.asJSONObject("Peripheral Disconnected"));
                 readCallback = null;
@@ -951,7 +987,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     // add a new command to the queue
     private void queueCommand(BLECommand command) {
-        LOG.d(TAG,"Queuing Command %s", command);
+        LOG.d(TAG, "Queuing Command %s", command);
         commandQueue.add(command);
 
         PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
@@ -963,7 +999,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     // command finished, queue the next command
     private void commandCompleted() {
-        LOG.d(TAG,"Processing Complete");
+        LOG.d(TAG, "Processing Complete");
         bleProcessing.set(false);
         processCommands();
     }
@@ -971,28 +1007,30 @@ public class Peripheral extends BluetoothGattCallback {
     // process the queue
     private void processCommands() {
         final boolean canProcess = bleProcessing.compareAndSet(false, true);
-        if (!canProcess) { return; }
-        LOG.d(TAG,"Processing Commands");
+        if (!canProcess) {
+            return;
+        }
+        LOG.d(TAG, "Processing Commands");
 
         BLECommand command = commandQueue.poll();
         if (command != null) {
             if (command.getType() == BLECommand.READ) {
-                LOG.d(TAG,"Read %s", command.getCharacteristicUUID());
+                LOG.d(TAG, "Read %s", command.getCharacteristicUUID());
                 readCharacteristic(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID());
             } else if (command.getType() == BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) {
-                LOG.d(TAG,"Write %s", command.getCharacteristicUUID());
+                LOG.d(TAG, "Write %s", command.getCharacteristicUUID());
                 writeCharacteristic(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID(), command.getData(), command.getType());
             } else if (command.getType() == BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) {
-                LOG.d(TAG,"Write No Response %s", command.getCharacteristicUUID());
+                LOG.d(TAG, "Write No Response %s", command.getCharacteristicUUID());
                 writeCharacteristic(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID(), command.getData(), command.getType());
             } else if (command.getType() == BLECommand.REGISTER_NOTIFY) {
-                LOG.d(TAG,"Register Notify %s", command.getCharacteristicUUID());
+                LOG.d(TAG, "Register Notify %s", command.getCharacteristicUUID());
                 registerNotifyCallback(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID());
             } else if (command.getType() == BLECommand.REMOVE_NOTIFY) {
-                LOG.d(TAG,"Remove Notify %s", command.getCharacteristicUUID());
+                LOG.d(TAG, "Remove Notify %s", command.getCharacteristicUUID());
                 removeNotifyCallback(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID());
             } else if (command.getType() == BLECommand.READ_RSSI) {
-                LOG.d(TAG,"Read RSSI");
+                LOG.d(TAG, "Read RSSI");
                 readRSSI(command.getCallbackContext());
             } else {
                 // this shouldn't happen
@@ -1022,7 +1060,8 @@ public class Peripheral extends BluetoothGattCallback {
         L2CAPContext context;
         synchronized (l2capContexts) {
             context = l2capContexts.get(psm);
-        };
+        }
+        ;
         if (context != null) {
             context.disconnectL2Cap();
         }

@@ -90,11 +90,17 @@ public class Peripheral extends BluetoothGattCallback {
     private void gattConnect() {
         LOG.d(TAG, "invoking gattConnect()");
 
+        LOG.d(TAG, "gattConnect(), *before close gatt* connected = " + connected);
+        LOG.d(TAG, "gattConnect(), *before close gatt* connecting = " + connecting);
+
         LOG.d(TAG, "gattConnect(), closing previous gatt before connectGatt again");
         closeGatt();
 
         connected = false;
         connecting = true;
+
+        LOG.d(TAG, "gattConnect(), *after close gatt* connected = " + connected);
+        LOG.d(TAG, "gattConnect(), *after close gatt* connecting = " + connecting);
 
         queueCleanup();
         callbackCleanup();
@@ -111,6 +117,9 @@ public class Peripheral extends BluetoothGattCallback {
 
     public void connect(CallbackContext callbackContext, Activity activity, boolean auto) {
         LOG.d(TAG, "invoking connect() with autoConnect flag = " + auto);
+        LOG.d(TAG, "connect(), connected = " + connected);
+        LOG.d(TAG, "connect(), connecting = " + connecting);
+
         currentActivity = activity;
         autoconnect = auto;
         connectCallback = callbackContext;
@@ -132,11 +141,19 @@ public class Peripheral extends BluetoothGattCallback {
     // disconnect the gatt, do not call connectCallback.error
     public void disconnect() {
         LOG.d(TAG, "invoking disconnect()");
+
+        LOG.d(TAG, "disconnect(), *before close gatt* connected = " + connected);
+        LOG.d(TAG, "disconnect(), *before close gatt* connecting = " + connecting);
+
         connected = false;
         connecting = false;
-        autoconnect = false;
+        autoconnect = false
 
         closeGatt();
+
+        LOG.d(TAG, "disconnect(), *before close gatt* connected = " + connected);
+        LOG.d(TAG, "disconnect(), *before close gatt* connecting = " + connecting);
+
         queueCleanup();
         callbackCleanup();
     }
@@ -147,6 +164,9 @@ public class Peripheral extends BluetoothGattCallback {
         LOG.d(TAG, "peripheralDisconnected() message = %s", message);
         connected = false;
         connecting = false;
+
+        LOG.d(TAG, "peripheralDisconnected(), connected = " + connected);
+        LOG.d(TAG, "peripheralDisconnected(), connecting = " + connecting);
 
         // don't remove the gatt for autoconnect
         if (!autoconnect) {
@@ -464,17 +484,28 @@ public class Peripheral extends BluetoothGattCallback {
 
         this.gatt = gatt;
 
+        LOG.d(TAG, "onConnectionStateChange(), *1* connected = " + connected);
+        LOG.d(TAG, "onConnectionStateChange(), *1* connecting = " + connecting);
+
+
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             LOG.d(TAG, "onConnectionStateChange CONNECTED");
             connected = true;
             connecting = false;
             LOG.d(TAG, "Starting service discovery using local gatt");
 
+            LOG.d(TAG, "onConnectionStateChange(), *2* connected = " + connected);
+            LOG.d(TAG, "onConnectionStateChange(), *2* connecting = " + connecting);
+
+
             boolean discoveryResult = gatt.discoverServices();
             LOG.d(TAG, "Service Discovery api result  = " + discoveryResult);
 
         } else {  // Disconnected
             Log.d(TAG, "On connection state change ---> " + status + " disconnect count " + disconnectCount);
+
+            LOG.d(TAG, "onConnectionStateChange(), *3* connected = " + connected);
+            LOG.d(TAG, "onConnectionStateChange(), *3* connecting = " + connecting);
 
             if (AUTO_CONNECT_OFF_DEVICES.shouldRetryForGatt133Status(this.device)) {
                 LOG.d(TAG, "onConnectionStateChange(), disconnected and shouldRetryForGatt133Status");
@@ -502,6 +533,9 @@ public class Peripheral extends BluetoothGattCallback {
                     }
                 }
             } else {
+                LOG.d(TAG, "onConnectionStateChange(), *4* connected = " + connected);
+                LOG.d(TAG, "onConnectionStateChange(), *4* connecting = " + connecting);
+
                 LOG.d(TAG, "onConnectionStateChange(), disconnected and not shouldRetryForGatt133Status");
                 LOG.d(TAG, "onConnectionStateChange DISCONNECTED");
                 connected = false;

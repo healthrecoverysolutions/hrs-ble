@@ -849,7 +849,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         pairedDevice = bluetoothAdapter.getRemoteDevice(macAddress);
 
         if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29 && (pairedDevice.getName().contains("UA-651") || pairedDevice.getName().contains("UC-352")
-                || pairedDevice.getName().contains("IR20") || pairedDevice.getName().contains("TNG SCALE") || pairedDevice.getName().contains("TAIDOC TD8255")
+                || pairedDevice.getName().contains("IR20") || pairedDevice.getName().contains("TAIDOC TD8255")
                 || pairedDevice.getName().contains("TD1107") || pairedDevice.getName().contains("Nonin3230")
         )) {
             LOG.d(TAG, "Bond State for Version > 29" + peripheral.getDevice().getBondState());
@@ -859,6 +859,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
                 setPairingCallback((btDevice, bondedState) -> {
                     LOG.d(TAG, "onPairingComplete Callback:" + btDevice);
+                    LOG.d(TAG, "onPairingComplete Callback bond state:" + bondedState);
                     if(bondedState == BluetoothDevice.BOND_BONDED) {
                         LOG.d(TAG, "onPairingComplete Initiate GattConnect:" + btDevice);
                         Peripheral peripheralDevice = new Peripheral(btDevice);
@@ -1181,6 +1182,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
+            LOG.d(TAG, "Scan FAILED "  + errorCode);
         }
     };
 

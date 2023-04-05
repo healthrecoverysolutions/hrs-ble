@@ -412,6 +412,7 @@ public class Peripheral extends BluetoothGattCallback {
      */
     public enum AUTO_CONNECT_OFF_DEVICES {
         WELCH_SC100("SC100"),
+        TNG_SCALE("TNG SCALE"),
         WELCH_BP100("BP100");
 
         private String text;
@@ -429,7 +430,7 @@ public class Peripheral extends BluetoothGattCallback {
                 String text = device.getName();
                 if (text != null ) {
                     for (Peripheral.AUTO_CONNECT_OFF_DEVICES b : Peripheral.AUTO_CONNECT_OFF_DEVICES.values()) {
-                        if (text.indexOf(b.text) > 0) {
+                        if(text.equals(b.text)) {
                             return true;
                         }
                     }

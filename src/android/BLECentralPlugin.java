@@ -1299,29 +1299,29 @@ public class BLECentralPlugin extends CordovaPlugin {
         callbackContext.sendPluginResult(result);
     }
 
-        private void stopScan() {
-            stopScanHandler.removeCallbacks(this::stopScan);
-            if (bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON) {
-                LOG.d(TAG, "Stopping Scan");
-                try {
-                    final BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
-                    if (bluetoothLeScanner != null)
-                        bluetoothLeScanner.stopScan(leScanCallback);
-                        JSONObject json = new JSONObject();
-                        try {
-                            json.put("scanEnd", "scanEndSuccess");
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    // Send the result indicating BLE scan is stopped now
-                    PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
-                    pluginResult.setKeepCallback(true);
-                    discoverCallback.sendPluginResult(pluginResult);
-                } catch (Exception e) {
-                    LOG.e(TAG, "Exception stopping scan", e);
-                }
+    private void stopScan() {
+        stopScanHandler.removeCallbacks(this::stopScan);
+        if (bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON) {
+            LOG.d(TAG, "Stopping Scan");
+            try {
+                final BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+                if (bluetoothLeScanner != null)
+                    bluetoothLeScanner.stopScan(leScanCallback);
+                    JSONObject json = new JSONObject();
+                    try {
+                        json.put("scanEnd", "scanEndSuccess");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                // Send the result indicating BLE scan is stopped now
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
+                pluginResult.setKeepCallback(true);
+                discoverCallback.sendPluginResult(pluginResult);
+            } catch (Exception e) {
+                LOG.e(TAG, "Exception stopping scan", e);
             }
         }
+    }
 
     private boolean locationServicesEnabled() {
         int locationMode = 0;

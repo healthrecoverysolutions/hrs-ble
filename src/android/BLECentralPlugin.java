@@ -888,6 +888,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 e.printStackTrace();
             }
             callbackContext.success();
+            // The below is for the admin screen only; cannot access Peripheral
         } else if(device != null) {
             try {
                 Method method = device.getClass().getMethod("removeBond", (Class[]) null);

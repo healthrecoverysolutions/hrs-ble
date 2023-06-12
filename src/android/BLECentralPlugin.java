@@ -888,6 +888,17 @@ public class BLECentralPlugin extends CordovaPlugin {
                 e.printStackTrace();
             }
             callbackContext.success();
+            // The below is for the admin screen only; cannot access Peripheral
+        } else if(device != null) {
+            try {
+                Method method = device.getClass().getMethod("removeBond", (Class[]) null);
+                method.invoke(device, (Object[]) null);
+                LOG.i(TAG, "Successfully removed bond from device");
+            } catch (Exception e) {
+                LOG.e(TAG, "ERROR: could not remove bond from device");
+                e.printStackTrace();
+            }
+            callbackContext.success();
         } else {
             String message = "Peripheral " + macAddress + " not found.";
             LOG.w(TAG, message);

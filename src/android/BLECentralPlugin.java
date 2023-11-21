@@ -39,7 +39,6 @@ import android.os.Looper;
 import android.os.Build;
 
 import android.provider.Settings;
-import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -51,6 +50,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 import java.lang.reflect.Method;
+import timber.log.Timber;
 
 import java.util.*;
 
@@ -206,7 +206,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-        LOG.d(TAG, "action = %s", action);
+        Timber.i("action = %s", action);
 
         if (bluetoothAdapter == null) {
             Activity activity = cordova.getActivity();
@@ -622,7 +622,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     private void onBluetoothStateChange(Intent intent) {
         final String action = intent.getAction();
-        LOG.d(TAG, "onBluetoothStateChange" + action);
+        Timber.i("onBluetoothStateChange" + action);
 
         if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
             final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
@@ -681,7 +681,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             webView.getContext().registerReceiver(this.stateReceiver, intentFilter);
         } catch (Exception e) {
-            LOG.e(TAG, "Error registering state receiver: " + e.getMessage(), e);
+            Timber.e("Error registering state receiver: %s", e.getMessage());
         }
     }
 
@@ -699,7 +699,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
             webView.getContext().registerReceiver(this.bondStateReceiver, intentFilter);
         } catch (Exception e) {
-            LOG.e(TAG, "Error registering bond state receiver: " + e.getMessage(), e);
+            Timber.e("Error registering bond state receiver: %s", e.getMessage());
         }
     }
 
@@ -708,7 +708,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             try {
                 webView.getContext().unregisterReceiver(this.bondStateReceiver);
             } catch (Exception e) {
-                LOG.e(TAG, "Error unregistering bond state receiver: " + e.getMessage(), e);
+                Timber.e("Error unregistering bond state receiver: %s", e.getMessage());
             }
         }
         this.bondStateCallback = null;
@@ -720,7 +720,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             try {
                 webView.getContext().unregisterReceiver(this.stateReceiver);
             } catch (Exception e) {
-                LOG.e(TAG, "Error unregistering state receiver: " + e.getMessage(), e);
+                Timber.e("Error unregistering state receiver: %s", e.getMessage());
             }
         }
         this.stateCallback = null;
@@ -758,7 +758,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             intentFilter.addAction(Intent.ACTION_PROVIDER_CHANGED);
             webView.getContext().registerReceiver(this.locationStateReceiver, intentFilter);
         } catch (Exception e) {
-            LOG.e(TAG, "Error registering location state receiver: " + e.getMessage(), e);
+            Timber.e("Error registering location state receiver: %s", e.getMessage());
         }
     }
 
@@ -767,7 +767,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             try {
                 webView.getContext().unregisterReceiver(this.locationStateReceiver);
             } catch (Exception e) {
-                LOG.e(TAG, "Error unregistering location state receiver: " + e.getMessage(), e);
+                Timber.e("Error unregistering location state receiver: %s", e.getMessage());
             }
         }
         this.locationStateCallback = null;
@@ -831,8 +831,8 @@ public class BLECentralPlugin extends CordovaPlugin {
         if (peripheral == null) {
             if (BluetoothAdapter.checkBluetoothAddress(macAddress)) {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
-                LOG.d(TAG, "Device Mac Address" + device);
-                LOG.d(TAG, "Bond State"+ bondedState);
+                Timber.i("Device Mac Address %s", device);
+                Timber.i("Bond State %s", bondedState);
 
                 peripheral = new Peripheral(device);
                 peripherals.put(device.getAddress(), peripheral);
@@ -852,16 +852,16 @@ public class BLECentralPlugin extends CordovaPlugin {
                 || pairedDevice.getName().contains("IR20") || pairedDevice.getName().contains("TAIDOC TD8255")
                 || pairedDevice.getName().contains("TD1107") || pairedDevice.getName().contains("Nonin3230")
         )) {
-            LOG.d(TAG, "Bond State for Version > 29" + peripheral.getDevice().getBondState());
+            Timber.i("Bond State for Version > 29" + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
                 peripheral.connect(callbackContext, cordova.getActivity(), false);// TODO setting this to false to stop auto connecting
             } else {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
                 setPairingCallback((btDevice, bondedState) -> {
-                    LOG.d(TAG, "onPairingComplete Callback:" + btDevice);
-                    LOG.d(TAG, "onPairingComplete Callback bond state:" + bondedState);
+                    Timber.i("onPairingComplete Callback:" + btDevice);
+                    Timber.i("onPairingComplete Callback bond state:" + bondedState);
                     if(bondedState == BluetoothDevice.BOND_BONDED) {
-                        LOG.d(TAG, "onPairingComplete Initiate GattConnect:" + btDevice);
+                        Timber.i("onPairingComplete Initiate GattConnect:" + btDevice);
                         Peripheral peripheralDevice = new Peripheral(btDevice);
                         peripheralDevice.connect(callbackContext, cordova.getActivity(), false); // TODO setting this to false to stop auto connecting
                     }
@@ -882,9 +882,9 @@ public class BLECentralPlugin extends CordovaPlugin {
             try {
                 Method method = device.getClass().getMethod("removeBond", (Class[]) null);
                 method.invoke(device, (Object[]) null);
-                LOG.i(TAG, "Successfully removed bond");
+                Timber.i("Successfully removed bond");
             } catch (Exception e) {
-                LOG.e(TAG, "ERROR: could not remove bond");
+                Timber.e("ERROR: could not remove bond");
                 e.printStackTrace();
             }
             callbackContext.success();
@@ -893,9 +893,9 @@ public class BLECentralPlugin extends CordovaPlugin {
             try {
                 Method method = device.getClass().getMethod("removeBond", (Class[]) null);
                 method.invoke(device, (Object[]) null);
-                LOG.i(TAG, "Successfully removed bond from device");
+                Timber.i("Successfully removed bond from device");
             } catch (Exception e) {
-                LOG.e(TAG, "ERROR: could not remove bond from device");
+                Timber.e("ERROR: could not remove bond from device");
                 e.printStackTrace();
             }
             callbackContext.success();
@@ -1193,7 +1193,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
-            LOG.d(TAG, "Scan FAILED "  + errorCode);
+            Timber.i("Scan FAILED "  + errorCode);
         }
     };
 
@@ -1281,7 +1281,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             Peripheral device = entry.getValue();
             boolean connecting = device.isConnecting();
             if (connecting){
-                LOG.d(TAG, "Not removing connecting device: " + device.getDevice().getAddress());
+                Timber.i("Not removing connecting device: " + device.getDevice().getAddress());
             }
             if(!entry.getValue().isConnected() && !connecting) {
                 iterator.remove();
@@ -1313,7 +1313,7 @@ public class BLECentralPlugin extends CordovaPlugin {
     private void stopScan() {
         stopScanHandler.removeCallbacks(this::stopScan);
         if (bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON) {
-            LOG.d(TAG, "Stopping Scan");
+            Timber.i("Stopping Scan");
             try {
                 final BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
                 if (bluetoothLeScanner != null)
@@ -1329,7 +1329,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 pluginResult.setKeepCallback(true);
                 discoverCallback.sendPluginResult(pluginResult);
             } catch (Exception e) {
-                LOG.e(TAG, "Exception stopping scan", e);
+                Timber.e("Exception stopping scan %s", e.getMessage());
             }
         }
     }
@@ -1339,7 +1339,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         try {
             locationMode = Settings.Secure.getInt(cordova.getActivity().getContentResolver(), Settings.Secure.LOCATION_MODE);
         } catch (Settings.SettingNotFoundException e) {
-            LOG.e(TAG, "Location Mode Setting Not Found", e);
+            Timber.e("Location Mode Setting Not Found %s", e.getMessage());
         }
         return (locationMode > 0);
     }
@@ -1373,12 +1373,12 @@ public class BLECentralPlugin extends CordovaPlugin {
         if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
 
             if (resultCode == Activity.RESULT_OK) {
-                LOG.d(TAG, "User enabled Bluetooth");
+                Timber.i("User enabled Bluetooth");
                 if (enableBluetoothCallback != null) {
                     enableBluetoothCallback.success();
                 }
             } else {
-                LOG.d(TAG, "User did *NOT* enable Bluetooth");
+                Timber.i("User did *NOT* enable Bluetooth");
                 if (enableBluetoothCallback != null) {
                     enableBluetoothCallback.error("User did not enable Bluetooth");
                 }
@@ -1413,19 +1413,19 @@ public class BLECentralPlugin extends CordovaPlugin {
         // Users MUST accept ACCESS_COARSE_LOCATION
         for (int i = 0; i < permissions.length; i++) {
             if (permissions[i].equals(Manifest.permission.ACCESS_FINE_LOCATION) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                LOG.d(TAG, "User *rejected* Fine Location Access");
+                Timber.i("User *rejected* Fine Location Access");
                 callback.error("Location permission not granted.");
                 return;
             } else if (permissions[i].equals(Manifest.permission.ACCESS_COARSE_LOCATION) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                LOG.d(TAG, "User *rejected* Coarse Location Access");
+                Timber.i("User *rejected* Coarse Location Access");
                 callback.error("Location permission not granted.");
                 return;
             } else if (permissions[i].equals(BLUETOOTH_SCAN) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                LOG.d(TAG, "User *rejected* Bluetooth_Scan Access");
+                Timber.i("User *rejected* Bluetooth_Scan Access");
                 callback.error("Bluetooth scan permission not granted.");
                 return;
             } else if (permissions[i].equals(BLUETOOTH_CONNECT) && grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                LOG.d(TAG, "User *rejected* Bluetooth_Connect Access");
+                Timber.i("User *rejected* Bluetooth_Connect Access");
                 callback.error("Bluetooth Connect permission not granted.");
                 return;
             }
@@ -1433,12 +1433,12 @@ public class BLECentralPlugin extends CordovaPlugin {
 
         switch(requestCode) {
             case REQUEST_ENABLE_BLUETOOTH:
-                LOG.d(TAG, "User granted Bluetooth Connect access for enable bluetooth");
+                Timber.i("User granted Bluetooth Connect access for enable bluetooth");
                 enableBluetooth(callback);
                 break;
 
             case REQUEST_BLUETOOTH_SCAN:
-                LOG.d(TAG, "User granted Bluetooth Scan Access");
+                Timber.i("User granted Bluetooth Scan Access");
                 findLowEnergyDevices(callback, serviceUUIDs, scanSeconds, scanSettings);
                 this.serviceUUIDs = null;
                 this.scanSeconds = -1;
@@ -1446,24 +1446,24 @@ public class BLECentralPlugin extends CordovaPlugin {
                 break;
 
             case REQUEST_BLUETOOTH_CONNECT:
-                LOG.d(TAG, "User granted Bluetooth Connect Access");
+                Timber.i("User granted Bluetooth Connect Access");
                 connect(callback, deviceMacAddress);
                 this.deviceMacAddress = null;
                 break;
 
             case REQUEST_BLUETOOTH_CONNECT_AUTO:
-                LOG.d(TAG, "User granted Bluetooth Auto Connect Access");
+                Timber.i("User granted Bluetooth Auto Connect Access");
                 autoConnect(callback, deviceMacAddress);
                 this.deviceMacAddress = null;
                 break;
 
             case REQUEST_GET_BONDED_DEVICES:
-                LOG.d(TAG, "User granted permissions for bonded devices");
+                Timber.i("User granted permissions for bonded devices");
                 getBondedDevices(callback);
                 break;
 
             case REQUEST_LIST_KNOWN_DEVICES:
-                LOG.d(TAG, "User granted permissions for list known devices");
+                Timber.i("User granted permissions for list known devices");
                 listKnownDevices(callback);
                 break;
         }

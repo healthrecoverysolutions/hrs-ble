@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import timber.log.Timber;
 
 class L2CAPContext {
     private static final String TAG = "L2CAPContext";
@@ -52,7 +53,7 @@ class L2CAPContext {
                 callbackContext.error("L2CAP not supported by platform");
             }
         } catch (Exception e) {
-            LOG.e(TAG, "connect L2Cap failed", e);
+            Timber.e("connect L2Cap failed %s", e.getMessage());
             callbackContext.error("Failed to open L2Cap connection");
         }
     }
@@ -72,7 +73,7 @@ class L2CAPContext {
                 socket = null;
             }
         } catch (Exception e) {
-            LOG.e(TAG, "disconnect L2Cap failed", e);
+            Timber.e("disconnect L2Cap failed %s", e.getMessage());
         }
         CallbackContext callback;
         synchronized (updateLock) {
@@ -101,7 +102,7 @@ class L2CAPContext {
             outputStream.write(data);
             callbackContext.success();
         } catch (IOException e) {
-            LOG.e(TAG, "L2Cap write failed", e);
+            Timber.e("L2Cap write failed %s", e.getMessage());
             disconnectL2Cap("L2Cap write pipe broken");
             callbackContext.error("L2CAP write failed");
         }
@@ -128,7 +129,7 @@ class L2CAPContext {
             disconnectL2Cap("L2Cap channel disconnected");
 
         } catch (Exception e) {
-            LOG.e(TAG, "reading L2Cap data failed", e);
+            Timber.e("reading L2Cap data failed %s", e.getMessage());
             disconnectL2Cap("L2Cap read pipe broken");
         }
     }

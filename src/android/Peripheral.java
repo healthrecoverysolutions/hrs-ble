@@ -931,7 +931,7 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     public void writeL2CapChannel(CallbackContext callbackContext, int psm, byte[] data) {
-        Timber.i(TAG,"L2CAP Write %s", psm);
+        Timber.i("L2CAP Write %s", psm);
         getOrAddL2CAPContext(psm).writeL2CapChannel(callbackContext, data);
     }
 
@@ -952,7 +952,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     // add a new command to the queue
     private void queueCommand(BLECommand command) {
-        Timber.i(TAG,"Queuing Command %s", command);
+        Timber.i("Queuing Command %s", command);
         commandQueue.add(command);
 
         PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
@@ -964,7 +964,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     // command finished, queue the next command
     private void commandCompleted() {
-        Timber.i(TAG,"Processing Complete");
+        Timber.i("Processing Complete");
         bleProcessing.set(false);
         processCommands();
     }
@@ -973,27 +973,27 @@ public class Peripheral extends BluetoothGattCallback {
     private void processCommands() {
         final boolean canProcess = bleProcessing.compareAndSet(false, true);
         if (!canProcess) { return; }
-        Timber.i(TAG,"Processing Commands");
+        Timber.i("Processing Commands");
 
         BLECommand command = commandQueue.poll();
         if (command != null) {
             if (command.getType() == BLECommand.READ) {
-                Timber.i(TAG,"Read %s", command.getCharacteristicUUID());
+                Timber.i("Read %s", command.getCharacteristicUUID());
                 readCharacteristic(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID());
             } else if (command.getType() == BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) {
-                Timber.i(TAG,"Write %s", command.getCharacteristicUUID());
+                Timber.i("Write %s", command.getCharacteristicUUID());
                 writeCharacteristic(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID(), command.getData(), command.getType());
             } else if (command.getType() == BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) {
-                Timber.i(TAG,"Write No Response %s", command.getCharacteristicUUID());
+                Timber.i("Write No Response %s", command.getCharacteristicUUID());
                 writeCharacteristic(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID(), command.getData(), command.getType());
             } else if (command.getType() == BLECommand.REGISTER_NOTIFY) {
-                Timber.i(TAG,"Register Notify %s", command.getCharacteristicUUID());
+                Timber.i("Register Notify %s", command.getCharacteristicUUID());
                 registerNotifyCallback(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID());
             } else if (command.getType() == BLECommand.REMOVE_NOTIFY) {
-                Timber.i(TAG,"Remove Notify %s", command.getCharacteristicUUID());
+                Timber.i("Remove Notify %s", command.getCharacteristicUUID());
                 removeNotifyCallback(command.getCallbackContext(), command.getServiceUUID(), command.getCharacteristicUUID());
             } else if (command.getType() == BLECommand.READ_RSSI) {
-                Timber.i(TAG,"Read RSSI");
+                Timber.i("Read RSSI");
                 readRSSI(command.getCallbackContext());
             } else {
                 // this shouldn't happen

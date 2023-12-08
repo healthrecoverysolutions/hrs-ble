@@ -19,7 +19,7 @@ function main() {
 
     git(`add .`);
     git(`commit -m "v${version}"`);
-    git(`tag ${version}`);
+    git(`tag hrs-${version}`);
 
     const currentBranch = getCurrentBranchName();
     let pushCommand = `push -u origin --tags`;

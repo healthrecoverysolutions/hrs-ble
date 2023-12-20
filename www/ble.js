@@ -3,7 +3,7 @@
 // Generic Cordova Utilities
 ////////////////////////////////////////////////////////////////
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BLE = exports.BLEPluginCordovaInterface = exports.L2CAPCordovaInterface = exports.BluetoothEventType = void 0;
+exports.BLE = exports.BLEPluginCordovaInterface = exports.L2CAPCordovaInterface = exports.BluetoothEventType = exports.CORDOVA_BRIDGE_MOCKED = exports.CORDOVA_BRIDGE_DEFAULT = void 0;
 function noop() {
     return;
 }
@@ -28,6 +28,42 @@ function cordovaExecPromise(plugin, method, args) {
 // Plugin Interface
 ////////////////////////////////////////////////////////////////
 var PLUGIN_NAME = 'BLE';
+exports.CORDOVA_BRIDGE_DEFAULT = {
+    invoke: function (method) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        return cordovaExecPromise(PLUGIN_NAME, method, args);
+    },
+    invokeCb: function (method, successCallback, errorCallback) {
+        if (successCallback === void 0) { successCallback = noop; }
+        if (errorCallback === void 0) { errorCallback = noop; }
+        var args = [];
+        for (var _i = 3; _i < arguments.length; _i++) {
+            args[_i - 3] = arguments[_i];
+        }
+        cordovaExec(PLUGIN_NAME, method, successCallback, errorCallback, args);
+    }
+};
+exports.CORDOVA_BRIDGE_MOCKED = {
+    invoke: function (method) {
+        var _args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            _args[_i - 1] = arguments[_i];
+        }
+        return Promise.resolve(method);
+    },
+    invokeCb: function (method, successCallback, _errorCallback) {
+        if (successCallback === void 0) { successCallback = noop; }
+        if (_errorCallback === void 0) { _errorCallback = noop; }
+        var _args = [];
+        for (var _i = 3; _i < arguments.length; _i++) {
+            _args[_i - 3] = arguments[_i];
+        }
+        successCallback(method);
+    }
+};
 var BluetoothEventType;
 (function (BluetoothEventType) {
     BluetoothEventType["CONNECTED"] = "CONNECTED";
@@ -37,22 +73,6 @@ var BluetoothEventType;
     BluetoothEventType["NOTIFICATION_STOPPED"] = "NOTIFICATION_STOPPED";
     BluetoothEventType["NOTIFICATION_RESULT"] = "NOTIFICATION_RESULT";
 })(BluetoothEventType || (exports.BluetoothEventType = BluetoothEventType = {}));
-function invokeCb(method, successCallback, errorCallback) {
-    if (successCallback === void 0) { successCallback = noop; }
-    if (errorCallback === void 0) { errorCallback = noop; }
-    var args = [];
-    for (var _i = 3; _i < arguments.length; _i++) {
-        args[_i - 3] = arguments[_i];
-    }
-    cordovaExec(PLUGIN_NAME, method, successCallback, errorCallback, args);
-}
-function invoke(method) {
-    var args = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        args[_i - 1] = arguments[_i];
-    }
-    return cordovaExecPromise(PLUGIN_NAME, method, args);
-}
 function stringToArrayBuffer(str) {
     var ret = new Uint8Array(str.length);
     for (var i = 0; i < str.length; i++) {
@@ -85,10 +105,12 @@ function convertToNativeJS(object) {
 // set of auto-connected device ids
 var autoconnected = {};
 var L2CAPCordovaInterface = /** @class */ (function () {
-    function L2CAPCordovaInterface() {
+    function L2CAPCordovaInterface(bridge) {
+        if (bridge === void 0) { bridge = exports.CORDOVA_BRIDGE_DEFAULT; }
+        this.bridge = bridge;
     }
     L2CAPCordovaInterface.prototype.close = function (deviceId, psm) {
-        return invoke('closeL2Cap', deviceId, psm);
+        return this.bridge.invoke('closeL2Cap', deviceId, psm);
     };
     L2CAPCordovaInterface.prototype.open = function (deviceId, psmOrOptions) {
         var psm = psmOrOptions;
@@ -97,52 +119,54 @@ var L2CAPCordovaInterface = /** @class */ (function () {
             psm = psmOrOptions.psm;
             settings = psmOrOptions;
         }
-        return invoke('openL2Cap', deviceId, psm, settings);
+        return this.bridge.invoke('openL2Cap', deviceId, psm, settings);
     };
     L2CAPCordovaInterface.prototype.receiveData = function (deviceId, psm) {
-        return invoke('receiveDataL2Cap', deviceId, psm);
+        return this.bridge.invoke('receiveDataL2Cap', deviceId, psm);
     };
     L2CAPCordovaInterface.prototype.write = function (deviceId, psm, data) {
-        return invoke('writeL2Cap', deviceId, psm, data);
+        return this.bridge.invoke('writeL2Cap', deviceId, psm, data);
     };
     return L2CAPCordovaInterface;
 }());
 exports.L2CAPCordovaInterface = L2CAPCordovaInterface;
 var BLEPluginCordovaInterface = /** @class */ (function () {
-    function BLEPluginCordovaInterface() {
-        this.l2cap = new L2CAPCordovaInterface();
+    function BLEPluginCordovaInterface(bridge) {
+        if (bridge === void 0) { bridge = exports.CORDOVA_BRIDGE_DEFAULT; }
+        this.bridge = bridge;
+        this.l2cap = new L2CAPCordovaInterface(bridge);
     }
     BLEPluginCordovaInterface.prototype.addEventListener = function (listener) {
-        return invoke("addEventListener", listener);
+        return this.bridge.invoke("addEventListener", listener);
     };
     BLEPluginCordovaInterface.prototype.removeEventListener = function (listener) {
-        return invoke("removeEventListener", listener);
+        return this.bridge.invoke("removeEventListener", listener);
     };
     BLEPluginCordovaInterface.prototype.removeAllEventListeners = function () {
-        return invoke("removeAllEventListeners");
+        return this.bridge.invoke("removeAllEventListeners");
     };
     BLEPluginCordovaInterface.prototype.watch = function (endpoints) {
-        return invoke("watch", endpoints);
+        return this.bridge.invoke("watch", endpoints);
     };
     BLEPluginCordovaInterface.prototype.unwatch = function (endpoints) {
-        return invoke("unwatch", endpoints);
+        return this.bridge.invoke("unwatch", endpoints);
     };
     BLEPluginCordovaInterface.prototype.scan = function (services, seconds, success, failure) {
         var successWrapper = function (peripheral) {
             convertToNativeJS(peripheral);
             success(peripheral);
         };
-        invokeCb('scan', successWrapper, failure, services, seconds);
+        this.bridge.invokeCb('scan', successWrapper, failure, services, seconds);
     };
     BLEPluginCordovaInterface.prototype.startScan = function (services, success, failure) {
         var successWrapper = function (peripheral) {
             convertToNativeJS(peripheral);
             success(peripheral);
         };
-        invokeCb('startScan', successWrapper, failure, services);
+        this.bridge.invokeCb('startScan', successWrapper, failure, services);
     };
     BLEPluginCordovaInterface.prototype.stopScan = function () {
-        return invoke('stopScan');
+        return this.bridge.invoke('stopScan');
     };
     BLEPluginCordovaInterface.prototype.startScanWithOptions = function (services, options, success, failure) {
         var successWrapper = function (peripheral) {
@@ -150,7 +174,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
             success(peripheral);
         };
         options = options || {};
-        invokeCb('startScanWithOptions', successWrapper, failure, services, options);
+        this.bridge.invokeCb('startScanWithOptions', successWrapper, failure, services, options);
     };
     /**
      * Find connected peripherals offering the listed service UUIDs.
@@ -158,7 +182,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * [Android] peripheralsWithIdentifiers is not supported on Android.
      */
     BLEPluginCordovaInterface.prototype.connectedPeripheralsWithServices = function (services) {
-        return invoke('connectedPeripheralsWithServices', services);
+        return this.bridge.invoke('connectedPeripheralsWithServices', services);
     };
     /**
      * Find known (but not necessarily connected) peripherals offering the listed device UUIDs.
@@ -166,26 +190,26 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * [Android] peripheralsWithIdentifiers is not supported on Android.
      */
     BLEPluginCordovaInterface.prototype.peripheralsWithIdentifiers = function (deviceIds) {
-        return invoke('peripheralsWithIdentifiers', deviceIds);
+        return this.bridge.invoke('peripheralsWithIdentifiers', deviceIds);
     };
     /**
      * Find the bonded devices.
      * [iOS] bondedDevices is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.bondedDevices = function () {
-        return invoke('bondedDevices');
+        return this.bridge.invoke('bondedDevices');
     };
     /* Lists all peripherals discovered by the plugin due to scanning or connecting since app launch.
     [iOS] list is not supported on iOS. */
     BLEPluginCordovaInterface.prototype.list = function () {
-        return invoke('list');
+        return this.bridge.invoke('list');
     };
     BLEPluginCordovaInterface.prototype.connect = function (deviceId, connectCallback, disconnectCallback) {
         var successWrapper = function (peripheral) {
             convertToNativeJS(peripheral);
             connectCallback(peripheral);
         };
-        invokeCb('connect', successWrapper, disconnectCallback, deviceId);
+        this.bridge.invokeCb('connect', successWrapper, disconnectCallback, deviceId);
     };
     /**
      * Automatically connect to a device when it is in range of the phone
@@ -194,6 +218,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * Not all Android devices implement this feature correctly.
      */
     BLEPluginCordovaInterface.prototype.autoConnect = function (deviceId, connectCallback, disconnectCallback) {
+        var _this = this;
         var disconnectCallbackWrapper;
         autoconnected[deviceId] = true;
         // wrap connectCallback so nested array buffers in advertising info are handled correctly
@@ -208,7 +233,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
                 disconnectCallback(peripheral);
                 // reconnect if we have a peripheral.id and the user didn't call disconnect
                 if (peripheral.id && autoconnected[peripheral.id]) {
-                    invokeCb('autoConnect', connectCallbackWrapper, disconnectCallbackWrapper, deviceId);
+                    _this.bridge.invokeCb('autoConnect', connectCallbackWrapper, disconnectCallbackWrapper, deviceId);
                 }
             };
         }
@@ -216,7 +241,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
             // no wrapper for Android
             disconnectCallbackWrapper = disconnectCallback;
         }
-        invokeCb('autoConnect', connectCallbackWrapper, disconnectCallbackWrapper, deviceId);
+        this.bridge.invokeCb('autoConnect', connectCallbackWrapper, disconnectCallbackWrapper, deviceId);
     };
     BLEPluginCordovaInterface.prototype.disconnect = function (deviceId) {
         try {
@@ -225,31 +250,31 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
         catch (e) {
             // ignore error
         }
-        return invoke('disconnect', deviceId);
+        return this.bridge.invoke('disconnect', deviceId);
     };
     BLEPluginCordovaInterface.prototype.queueCleanup = function (deviceId) {
-        return invoke('queueCleanup', deviceId);
+        return this.bridge.invoke('queueCleanup', deviceId);
     };
     /**
      * sets the pin when device requires it.
      * [iOS] setPin is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.setPin = function (pin) {
-        return invoke('setPin', pin);
+        return this.bridge.invoke('setPin', pin);
     };
     /**
      * May be used to request (on Android) a larger MTU size to be able to send more data at once
      * [iOS] requestMtu is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.requestMtu = function (deviceId, mtu) {
-        return invoke('requestMtu', deviceId, mtu);
+        return this.bridge.invoke('requestMtu', deviceId, mtu);
     };
     /**
      * When Connecting to a peripheral android can request for the connection priority for faster communication.
      * [iOS] requestConnectionPriority is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.requestConnectionPriority = function (deviceId, priority) {
-        return invoke('requestConnectionPriority', deviceId, priority);
+        return this.bridge.invoke('requestConnectionPriority', deviceId, priority);
     };
     /**
      * Clears cached services and characteristics info for some poorly behaved devices.
@@ -257,16 +282,16 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * [iOS] refreshDeviceCache is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.refreshDeviceCache = function (deviceId, timeoutMillis) {
-        return invoke('refreshDeviceCache', deviceId, timeoutMillis);
+        return this.bridge.invoke('refreshDeviceCache', deviceId, timeoutMillis);
     };
     BLEPluginCordovaInterface.prototype.read = function (deviceId, serviceUuid, characteristicUuid) {
-        return invoke('read', deviceId, serviceUuid, characteristicUuid);
+        return this.bridge.invoke('read', deviceId, serviceUuid, characteristicUuid);
     };
     BLEPluginCordovaInterface.prototype.readRSSI = function (deviceId) {
-        return invoke('readRSSI', deviceId);
+        return this.bridge.invoke('readRSSI', deviceId);
     };
     BLEPluginCordovaInterface.prototype.write = function (deviceId, serviceUuid, characteristicUuid, data) {
-        return invoke('write', deviceId, serviceUuid, characteristicUuid, data);
+        return this.bridge.invoke('write', deviceId, serviceUuid, characteristicUuid, data);
     };
     /**
      * Writes data to a characteristic without a response from the peripheral.
@@ -274,7 +299,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * The success callback is be called when the characteristic is written.
      */
     BLEPluginCordovaInterface.prototype.writeWithoutResponse = function (deviceId, serviceUuid, characteristicUuid, data) {
-        return invoke('writeWithoutResponse', deviceId, serviceUuid, characteristicUuid, data);
+        return this.bridge.invoke('writeWithoutResponse', deviceId, serviceUuid, characteristicUuid, data);
     };
     /**
      * Start notifications on the given characteristic
@@ -294,16 +319,16 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
                 success(data);
             }
         }
-        invokeCb('startNotification', onEvent, failure, deviceId, serviceUuid, characteristicUuid);
+        this.bridge.invokeCb('startNotification', onEvent, failure, deviceId, serviceUuid, characteristicUuid);
     };
     BLEPluginCordovaInterface.prototype.stopNotification = function (deviceId, serviceUuid, characteristicUuid) {
-        return invoke('stopNotification', deviceId, serviceUuid, characteristicUuid);
+        return this.bridge.invoke('stopNotification', deviceId, serviceUuid, characteristicUuid);
     };
     /**
      * Calls the success callback when the peripheral is connected and the failure callback when not connected.
      */
     BLEPluginCordovaInterface.prototype.isConnected = function (deviceId) {
-        return invoke('isConnected', deviceId);
+        return this.bridge.invoke('isConnected', deviceId);
     };
     BLEPluginCordovaInterface.prototype.testConnected = function (deviceId) {
         return this.isConnected(deviceId)
@@ -314,7 +339,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * Reports if bluetooth is enabled.
      */
     BLEPluginCordovaInterface.prototype.isEnabled = function () {
-        return invoke('isEnabled');
+        return this.bridge.invoke('isEnabled');
     };
     BLEPluginCordovaInterface.prototype.testEnabled = function () {
         return this.isEnabled()
@@ -326,7 +351,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * [iOS] isLocationEnabled is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.isLocationEnabled = function () {
-        return invoke('isLocationEnabled');
+        return this.bridge.invoke('isLocationEnabled');
     };
     BLEPluginCordovaInterface.prototype.testLocationEnabled = function () {
         return this.isLocationEnabled()
@@ -338,33 +363,33 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * [iOS] enable is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.enable = function () {
-        return invoke('enable');
+        return this.bridge.invoke('enable');
     };
     /**
      * Opens the Bluetooth settings for the operating systems.
      * [iOS] showBluetoothSettings is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.showBluetoothSettings = function () {
-        return invoke('showBluetoothSettings');
+        return this.bridge.invoke('showBluetoothSettings');
     };
     /**
      * Registers a change listener for location-related services.
      * [iOS] startLocationStateNotifications is not supported on iOS.
      */
     BLEPluginCordovaInterface.prototype.startLocationStateNotifications = function (change, failure) {
-        invokeCb('startLocationStateNotifications', change, failure);
+        this.bridge.invokeCb('startLocationStateNotifications', change, failure);
     };
     BLEPluginCordovaInterface.prototype.stopLocationStateNotifications = function () {
-        return invoke('stopLocationStateNotifications');
+        return this.bridge.invoke('stopLocationStateNotifications');
     };
     /**
      * Registers a change listener for Bluetooth adapter state changes
      */
     BLEPluginCordovaInterface.prototype.startStateNotifications = function (success, failure) {
-        invokeCb('startStateNotifications', success, failure);
+        this.bridge.invokeCb('startStateNotifications', success, failure);
     };
     BLEPluginCordovaInterface.prototype.stopStateNotifications = function () {
-        return invoke('stopStateNotifications');
+        return this.bridge.invoke('stopStateNotifications');
     };
     /**
      * Reports the BLE restoration status if the app was restarted by iOS as a result of a BLE event.
@@ -372,7 +397,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
      * [Android] restoredBluetoothState is not supported on Android.
      */
     BLEPluginCordovaInterface.prototype.restoredBluetoothState = function () {
-        return invoke('restoredBluetoothState');
+        return this.bridge.invoke('restoredBluetoothState');
     };
     return BLEPluginCordovaInterface;
 }());

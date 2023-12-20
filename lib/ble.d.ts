@@ -41,6 +41,29 @@ export interface L2CAPOptions {
     psm: number;
     secureChannel?: boolean;
 }
+export declare enum BluetoothEventType {
+    CONNECTED = "CONNECTED",
+    DISCONNECTED = "DISCONNECTED",
+    READ_RESULT = "READ_RESULT",
+    NOTIFICATION_STARTED = "NOTIFICATION_STARTED",
+    NOTIFICATION_STOPPED = "NOTIFICATION_STOPPED",
+    NOTIFICATION_RESULT = "NOTIFICATION_RESULT"
+}
+export type BluetoothEventData = ArrayBuffer;
+export interface BluetoothEvent {
+    messageId: number;
+    type: BluetoothEventType;
+    deviceId: string;
+    serviceId?: string;
+    characteristicId?: string;
+    data?: BluetoothEventData;
+}
+export type BluetoothEventListener = (ev: BluetoothEvent) => void;
+export interface BluetoothWatchEndpoint {
+    deviceId: string;
+    serviceId: string;
+    characteristicId: string;
+}
 export declare class L2CAPCordovaInterface {
     close(deviceId: string, psm: number): Promise<void>;
     open(deviceId: string, psmOrOptions: number | L2CAPOptions): Promise<void>;
@@ -49,6 +72,11 @@ export declare class L2CAPCordovaInterface {
 }
 export declare class BLEPluginCordovaInterface {
     readonly l2cap: L2CAPCordovaInterface;
+    addEventListener(listener: BluetoothEventListener): Promise<void>;
+    removeEventListener(listener: BluetoothEventListener): Promise<void>;
+    removeAllEventListeners(): Promise<void>;
+    watch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;
+    unwatch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;
     scan(services: string[], seconds: number, success: (data: PeripheralData) => any, failure?: (error: string) => any): void;
     startScan(services: string[], success: (data: PeripheralData) => any, failure?: (error: string | BLEError) => any): void;
     stopScan(): Promise<void>;

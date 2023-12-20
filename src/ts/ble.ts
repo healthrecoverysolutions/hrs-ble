@@ -96,6 +96,34 @@ export interface L2CAPOptions {
     secureChannel?: boolean;
 }
 
+export enum BluetoothEventType {
+    CONNECTED = 'CONNECTED',
+    DISCONNECTED = 'DISCONNECTED',
+    READ_RESULT = 'READ_RESULT',
+    NOTIFICATION_STARTED = 'NOTIFICATION_STARTED',
+    NOTIFICATION_STOPPED = 'NOTIFICATION_STOPPED',
+    NOTIFICATION_RESULT = 'NOTIFICATION_RESULT'
+}
+
+export type BluetoothEventData = ArrayBuffer;
+
+export interface BluetoothEvent {
+    messageId: number;
+    type: BluetoothEventType;
+    deviceId: string;
+    serviceId?: string;
+    characteristicId?: string;
+    data?: BluetoothEventData;
+}
+
+export type BluetoothEventListener = (ev: BluetoothEvent) => void;
+
+export interface BluetoothWatchEndpoint {
+    deviceId: string;
+    serviceId: string;
+    characteristicId: string;
+}
+
 function invokeCb<T>(
     method: string,
 	successCallback: CdvSuccessCallback<T> = noop,
@@ -183,6 +211,26 @@ export class L2CAPCordovaInterface {
 export class BLEPluginCordovaInterface {
 
     public readonly l2cap = new L2CAPCordovaInterface();
+
+    public addEventListener(listener: BluetoothEventListener): Promise<void> {
+        return invoke(`addEventListener`, listener);
+    }
+
+    public removeEventListener(listener: BluetoothEventListener): Promise<void> {
+        return invoke(`removeEventListener`, listener);
+    }
+
+    public removeAllEventListeners(): Promise<void> {
+        return invoke(`removeAllEventListeners`);
+    }
+
+    public watch(endpoints: BluetoothWatchEndpoint[]): Promise<void> {
+        return invoke(`watch`, endpoints);
+    }
+
+    public unwatch(endpoints: BluetoothWatchEndpoint[]): Promise<void> {
+        return invoke(`unwatch`, endpoints);
+    }
 
     public scan(
         services: string[],

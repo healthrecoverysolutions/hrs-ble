@@ -3,7 +3,7 @@
 // Generic Cordova Utilities
 ////////////////////////////////////////////////////////////////
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BLE = exports.BLEPluginCordovaInterface = exports.L2CAPCordovaInterface = void 0;
+exports.BLE = exports.BLEPluginCordovaInterface = exports.L2CAPCordovaInterface = exports.BluetoothEventType = void 0;
 function noop() {
     return;
 }
@@ -28,6 +28,15 @@ function cordovaExecPromise(plugin, method, args) {
 // Plugin Interface
 ////////////////////////////////////////////////////////////////
 var PLUGIN_NAME = 'BLE';
+var BluetoothEventType;
+(function (BluetoothEventType) {
+    BluetoothEventType["CONNECTED"] = "CONNECTED";
+    BluetoothEventType["DISCONNECTED"] = "DISCONNECTED";
+    BluetoothEventType["READ_RESULT"] = "READ_RESULT";
+    BluetoothEventType["NOTIFICATION_STARTED"] = "NOTIFICATION_STARTED";
+    BluetoothEventType["NOTIFICATION_STOPPED"] = "NOTIFICATION_STOPPED";
+    BluetoothEventType["NOTIFICATION_RESULT"] = "NOTIFICATION_RESULT";
+})(BluetoothEventType || (exports.BluetoothEventType = BluetoothEventType = {}));
 function invokeCb(method, successCallback, errorCallback) {
     if (successCallback === void 0) { successCallback = noop; }
     if (errorCallback === void 0) { errorCallback = noop; }
@@ -103,6 +112,21 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
     function BLEPluginCordovaInterface() {
         this.l2cap = new L2CAPCordovaInterface();
     }
+    BLEPluginCordovaInterface.prototype.addEventListener = function (listener) {
+        return invoke("addEventListener", listener);
+    };
+    BLEPluginCordovaInterface.prototype.removeEventListener = function (listener) {
+        return invoke("removeEventListener", listener);
+    };
+    BLEPluginCordovaInterface.prototype.removeAllEventListeners = function () {
+        return invoke("removeAllEventListeners");
+    };
+    BLEPluginCordovaInterface.prototype.watch = function (endpoints) {
+        return invoke("watch", endpoints);
+    };
+    BLEPluginCordovaInterface.prototype.unwatch = function (endpoints) {
+        return invoke("unwatch", endpoints);
+    };
     BLEPluginCordovaInterface.prototype.scan = function (services, seconds, success, failure) {
         var successWrapper = function (peripheral) {
             convertToNativeJS(peripheral);

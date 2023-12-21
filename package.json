@@ -2,9 +2,9 @@
   "name": "cordova-plugin-ble-central",
   "version": "1.6.1",
   "description": "Bluetooth Low Energy (BLE) Central Plugin",
-  "main": "./lib/index.js",
-  "module": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "main": "./lib/ble.js",
+  "module": "./lib/ble.js",
+  "types": "./lib/ble.d.ts",
   "scripts": {
     "build:clean": "rm -rf ./www/* ./lib/*",
     "build:cordova": "tsc -p tsconfig.cordova.json",

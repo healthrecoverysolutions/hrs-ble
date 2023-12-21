@@ -1,3 +1,11 @@
+type CdvSuccessCallback<TValue> = (value: TValue) => void;
+type CdvErrorCallback = (error: any) => void;
+export interface CordovaBridge {
+    invoke<T>(method: string, ...args: any[]): Promise<T>;
+    invokeCb<T>(method: string, successCallback?: CdvSuccessCallback<T>, errorCallback?: CdvErrorCallback, ...args: any[]): void;
+}
+export declare const CORDOVA_BRIDGE_DEFAULT: CordovaBridge;
+export declare const CORDOVA_BRIDGE_MOCKED: CordovaBridge;
 export type PeripheralState = 'disconnected' | 'disconnecting' | 'connecting' | 'connected';
 export type ConnectionPriority = 'high' | 'balanced' | 'low';
 export interface PeripheralCharacteristic {
@@ -41,14 +49,45 @@ export interface L2CAPOptions {
     psm: number;
     secureChannel?: boolean;
 }
+export declare enum BluetoothEventType {
+    CONNECTED = "CONNECTED",
+    DISCONNECTED = "DISCONNECTED",
+    READ_RESULT = "READ_RESULT",
+    NOTIFICATION_STARTED = "NOTIFICATION_STARTED",
+    NOTIFICATION_STOPPED = "NOTIFICATION_STOPPED",
+    NOTIFICATION_RESULT = "NOTIFICATION_RESULT"
+}
+export type BluetoothEventData = ArrayBuffer;
+export interface BluetoothEvent {
+    messageId: number;
+    type: BluetoothEventType;
+    deviceId: string;
+    serviceId?: string;
+    characteristicId?: string;
+    data?: BluetoothEventData;
+}
+export type BluetoothEventListener = (ev: BluetoothEvent) => void;
+export interface BluetoothWatchEndpoint {
+    deviceId: string;
+    serviceId: string;
+    characteristicId: string;
+}
 export declare class L2CAPCordovaInterface {
+    bridge: CordovaBridge;
+    constructor(bridge?: CordovaBridge);
     close(deviceId: string, psm: number): Promise<void>;
     open(deviceId: string, psmOrOptions: number | L2CAPOptions): Promise<void>;
     receiveData(deviceId: string, psm: number): Promise<ArrayBuffer>;
     write(deviceId: string, psm: number, data: ArrayBuffer): Promise<void>;
 }
 export declare class BLEPluginCordovaInterface {
+    bridge: CordovaBridge;
     readonly l2cap: L2CAPCordovaInterface;
+    constructor(bridge?: CordovaBridge);
+    setEventListener(listener: BluetoothEventListener): Promise<void>;
+    removeEventListener(): Promise<void>;
+    watch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;
+    unwatch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;
     scan(services: string[], seconds: number, success: (data: PeripheralData) => any, failure?: (error: string) => any): void;
     startScan(services: string[], success: (data: PeripheralData) => any, failure?: (error: string | BLEError) => any): void;
     stopScan(): Promise<void>;
@@ -166,3 +205,4 @@ export declare class BLEPluginCordovaInterface {
     restoredBluetoothState(): Promise<RestoredState>;
 }
 export declare const BLE: BLEPluginCordovaInterface;
+export {};

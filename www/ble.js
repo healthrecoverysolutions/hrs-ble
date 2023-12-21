@@ -136,14 +136,8 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
         this.bridge = bridge;
         this.l2cap = new L2CAPCordovaInterface(bridge);
     }
-    BLEPluginCordovaInterface.prototype.addEventListener = function (listener) {
-        return this.bridge.invoke("addEventListener", listener);
-    };
-    BLEPluginCordovaInterface.prototype.removeEventListener = function (listener) {
-        return this.bridge.invoke("removeEventListener", listener);
-    };
-    BLEPluginCordovaInterface.prototype.removeAllEventListeners = function () {
-        return this.bridge.invoke("removeAllEventListeners");
+    BLEPluginCordovaInterface.prototype.setEventListener = function (listener) {
+        return this.bridge.invoke("setEventListener", listener);
     };
     BLEPluginCordovaInterface.prototype.watch = function (endpoints) {
         return this.bridge.invoke("watch", endpoints);

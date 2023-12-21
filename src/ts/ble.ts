@@ -248,16 +248,8 @@ export class BLEPluginCordovaInterface {
         this.l2cap = new L2CAPCordovaInterface(bridge);
     }
 
-    public addEventListener(listener: BluetoothEventListener): Promise<void> {
-        return this.bridge.invoke(`addEventListener`, listener);
-    }
-
-    public removeEventListener(listener: BluetoothEventListener): Promise<void> {
-        return this.bridge.invoke(`removeEventListener`, listener);
-    }
-
-    public removeAllEventListeners(): Promise<void> {
-        return this.bridge.invoke(`removeAllEventListeners`);
+    public setEventListener(listener: BluetoothEventListener | null): Promise<void> {
+        return this.bridge.invoke(`setEventListener`, listener);
     }
 
     public watch(endpoints: BluetoothWatchEndpoint[]): Promise<void> {

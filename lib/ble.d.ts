@@ -84,9 +84,7 @@ export declare class BLEPluginCordovaInterface {
     bridge: CordovaBridge;
     readonly l2cap: L2CAPCordovaInterface;
     constructor(bridge?: CordovaBridge);
-    addEventListener(listener: BluetoothEventListener): Promise<void>;
-    removeEventListener(listener: BluetoothEventListener): Promise<void>;
-    removeAllEventListeners(): Promise<void>;
+    setEventListener(listener: BluetoothEventListener | null): Promise<void>;
     watch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;
     unwatch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;
     scan(services: string[], seconds: number, success: (data: PeripheralData) => any, failure?: (error: string) => any): void;

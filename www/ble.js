@@ -139,6 +139,9 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
     BLEPluginCordovaInterface.prototype.setEventListener = function (listener) {
         return this.bridge.invoke("setEventListener", listener);
     };
+    BLEPluginCordovaInterface.prototype.removeEventListener = function () {
+        return this.bridge.invoke("removeEventListener");
+    };
     BLEPluginCordovaInterface.prototype.watch = function (endpoints) {
         return this.bridge.invoke("watch", endpoints);
     };

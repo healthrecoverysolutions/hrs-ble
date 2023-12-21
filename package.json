@@ -2,6 +2,21 @@
   "name": "cordova-plugin-ble-central",
   "version": "1.6.1",
   "description": "Bluetooth Low Energy (BLE) Central Plugin",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "build:clean": "rm -rf ./www/* ./lib/*",
+    "build:cordova": "tsc -p tsconfig.cordova.json",
+    "build:es6": "tsc -p tsconfig.es6.json",
+    "build": "run-s build:clean build:cordova build:es6",
+    "version:sync": "node ./scripts/version-sync.js",
+    "version": "run-s build version:sync",
+    "version:patch": "npm version patch",
+    "version:publish": "node ./scripts/version-publish.js",
+    "npm:publish": "npm publish",
+    "bump": "run-s version:patch version:publish npm:publish"
+  },
   "cordova": {
     "id": "cordova-plugin-ble-central",
     "platforms": [
@@ -35,6 +50,11 @@
   "bugs": {
     "url": "https://github.com/don/cordova-plugin-ble-central/issues"
   },
-  "types": "./types.d.ts",
-  "homepage": "https://github.com/don/cordova-plugin-ble-central#readme"
+  "homepage": "https://github.com/don/cordova-plugin-ble-central#readme",
+  "devDependencies": {
+    "@types/cordova": "11.0.3",
+    "@types/node": "20.10.4",
+    "npm-run-all": "4.1.5",
+    "typescript": "5.3.3"
+  }
 }

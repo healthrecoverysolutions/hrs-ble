@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-ble-central",
-  "version": "1.6.1",
+  "version": "1.6.5",
   "description": "Bluetooth Low Energy (BLE) Central Plugin",
   "main": "./lib/ble.js",
   "module": "./lib/ble.js",
@@ -14,8 +14,7 @@
     "version": "run-s build version:sync",
     "version:patch": "npm version patch",
     "version:publish": "node ./scripts/version-publish.js",
-    "npm:publish": "npm publish",
-    "bump": "run-s version:patch version:publish npm:publish"
+    "bump": "run-s version:patch version:publish"
   },
   "cordova": {
     "id": "cordova-plugin-ble-central",

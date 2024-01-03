@@ -80,8 +80,18 @@
 
         <hook type="after_prepare" src="hooks/after_prepare.js"/>
 
-        <source-file src="src/android/BLECentralPlugin.java"
+        <source-file src="src/android/BLECentralPlugin.kt"
             target-dir="src/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/BLEEventManager.kt"
+            target-dir="java/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/BLEEventListenerType.kt"
+            target-dir="java/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/BluetoothEvent.kt"
+            target-dir="java/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/BluetoothEventType.kt"
+            target-dir="java/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/BluetoothWatchEndpoint.kt"
+            target-dir="java/com/megster/cordova/ble/central"/>
         <source-file src="src/android/SequentialCallbackContext.java"
             target-dir="src/com/megster/cordova/ble/central"/>
         <source-file src="src/android/BLECommand.java"

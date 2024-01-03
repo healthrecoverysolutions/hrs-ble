@@ -14,6 +14,7 @@
 package com.megster.cordova.ble.central
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -97,10 +98,6 @@ class BLECentralPlugin : CordovaPlugin() {
     }
     var locationStateCallback: CallbackContext? = null
     var locationStateReceiver: BroadcastReceiver? = null
-    fun setPairingCallback(pairingCallback: PairingCallback?) {
-        this.pairingCallback = pairingCallback
-    }
-
     var pairingCallback: PairingCallback? = null
 
     interface PairingCallback {
@@ -417,6 +414,7 @@ class BLECentralPlugin : CordovaPlugin() {
         cordova.startActivityForResult(this, intent, REQUEST_ENABLE_BLUETOOTH)
     }
 
+    @SuppressLint("MissingPermission")
     private fun getBondedDevices(callbackContext: CallbackContext) {
         if (COMPILE_SDK_VERSION >= 31 && Build.VERSION.SDK_INT >= 31) { // (API 31) Build.VERSION_CODE.S
             if (!PermissionHelper.hasPermission(this, BLUETOOTH_CONNECT)) {
@@ -454,6 +452,7 @@ class BLECentralPlugin : CordovaPlugin() {
         return serviceUUIDs.toTypedArray()
     }
 
+    @SuppressLint("MissingPermission")
     private fun onBluetoothStateChange(intent: Intent) {
         val action = intent.action
         Timber.i("onBluetoothStateChange$action")
@@ -638,6 +637,7 @@ class BLECentralPlugin : CordovaPlugin() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun autoConnect(callbackContext: CallbackContext, macAddress: String?) {
         if (COMPILE_SDK_VERSION >= 31 && Build.VERSION.SDK_INT >= 31) { // (API 31) Build.VERSION_CODE.S
             if (!PermissionHelper.hasPermission(this, BLUETOOTH_CONNECT)) {
@@ -692,13 +692,13 @@ class BLECentralPlugin : CordovaPlugin() {
                 ) // TODO setting this to false to stop auto connecting
             } else {
                 val device = bluetoothAdapter!!.getRemoteDevice(macAddress)
-                setPairingCallback(object : PairingCallback {
+                pairingCallback = object : PairingCallback {
                     override fun onPairingCompleted(btDevice: BluetoothDevice?, bondedState: Int) {
                         Timber.i("onPairingComplete Callback:$btDevice")
                         Timber.i("onPairingComplete Callback bond state:$bondedState")
                         if (bondedState == BluetoothDevice.BOND_BONDED) {
                             Timber.i("onPairingComplete Initiate GattConnect:$btDevice")
-                            val peripheralDevice = Peripheral(btDevice)
+                            val peripheralDevice = Peripheral(btDevice!!)
                             peripheralDevice.connect(
                                 callbackContext,
                                 cordova.activity,
@@ -706,7 +706,7 @@ class BLECentralPlugin : CordovaPlugin() {
                             ) // TODO setting this to false to stop auto connecting
                         }
                     }
-                })
+                }
                 device.createBond()
             }
         } else {
@@ -724,8 +724,8 @@ class BLECentralPlugin : CordovaPlugin() {
         if (peripheral != null) {
             peripheral.disconnect()
             try {
-                val method = device!!.javaClass.getMethod("removeBond", *null as Array<Class<*>?>?)
-                method.invoke(device, *null as Array<Any?>?)
+                val method = device!!.javaClass.getMethod("removeBond")
+                method.invoke(device)
                 Timber.i("Successfully removed bond")
             } catch (e: Exception) {
                 Timber.e("ERROR: could not remove bond")
@@ -735,8 +735,8 @@ class BLECentralPlugin : CordovaPlugin() {
             // The below is for the admin screen only; cannot access Peripheral
         } else if (device != null) {
             try {
-                val method = device.javaClass.getMethod("removeBond", *null as Array<Class<*>?>?)
-                method.invoke(device, null as Array<Any?>?)
+                val method = device.javaClass.getMethod("removeBond")
+                method.invoke(device)
                 Timber.i("Successfully removed bond from device")
             } catch (e: Exception) {
                 Timber.e("ERROR: could not remove bond from device")
@@ -763,6 +763,7 @@ class BLECentralPlugin : CordovaPlugin() {
                 webView.context.unregisterReceiver(broadCastReceiver)
             }
             broadCastReceiver = object : BroadcastReceiver() {
+                @SuppressLint("MissingPermission")
                 override fun onReceive(context: Context, intent: Intent) {
                     val action = intent.action
                     if (BluetoothDevice.ACTION_PAIRING_REQUEST == action) {
@@ -1039,6 +1040,7 @@ class BLECentralPlugin : CordovaPlugin() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun findLowEnergyDevices(
         callbackContext: CallbackContext,
         serviceUUIDs: Array<UUID>?,
@@ -1129,12 +1131,12 @@ class BLECentralPlugin : CordovaPlugin() {
         val iterator: MutableIterator<Map.Entry<String?, Peripheral>> =
             peripherals.entries.iterator()
         while (iterator.hasNext()) {
-            val (_, device1) = iterator.next()
-            val connecting = device.isConnecting
+            val (_, peripheral) = iterator.next()
+            val connecting = peripheral.isConnecting
             if (connecting) {
-                Timber.i("Not removing connecting device: " + device.device.address)
+                Timber.i("Not removing connecting device: " + peripheral.device.address)
             }
-            if (!device1.isConnected && !connecting) {
+            if (!peripheral.isConnected && !connecting) {
                 iterator.remove()
             }
         }
@@ -1159,6 +1161,7 @@ class BLECentralPlugin : CordovaPlugin() {
         callbackContext.sendPluginResult(result)
     }
 
+    @SuppressLint("MissingPermission")
     private fun stopScan() {
         stopScanHandler.removeCallbacks { stopScan() }
         if (bluetoothAdapter!!.state == BluetoothAdapter.STATE_ON) {

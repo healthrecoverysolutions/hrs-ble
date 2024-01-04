@@ -143,7 +143,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
         this.l2cap = new L2CAPCordovaInterface(bridge);
     }
     BLEPluginCordovaInterface.prototype.setEventListener = function (listener) {
-        return this.bridge.invoke("setEventListener", listener);
+        this.bridge.invokeCb("setEventListener", listener);
     };
     BLEPluginCordovaInterface.prototype.removeEventListener = function () {
         return this.bridge.invoke("removeEventListener");

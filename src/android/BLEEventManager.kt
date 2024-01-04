@@ -22,8 +22,8 @@ internal class BLEEventManager private constructor() {
 
     private val bluetoothWatchEndpoints: MutableList<BluetoothWatchEndpoint> = mutableListOf()
 
-    private var listenerJob: Job? = null
     private var scanServicesJob: Job? = null
+    private var eventListener: ((BluetoothEvent) -> Unit)? = null
 
     init {
         setupPolling()
@@ -35,10 +35,16 @@ internal class BLEEventManager private constructor() {
         }
     }
 
+    fun setEventListener(listener: (BluetoothEvent) -> Unit) {
+        eventListener = listener
+    }
+
+    fun removeEventListener() {
+        eventListener = null
+    }
+
     fun sendEvent(bleEvent: BluetoothEvent) {
-        coroutineScope.launch {
-            _notificationBroadcaster.emit(bleEvent)
-        }
+        eventListener?.invoke(bleEvent)
     }
 
     fun watch(endpoints: List<BluetoothWatchEndpoint>) {
@@ -53,27 +59,5 @@ internal class BLEEventManager private constructor() {
                     && currentEndpoint.deviceId == removingEndpoint.deviceId
             }
         }
-    }
-
-    fun addEventListener(listener: (BluetoothEvent) -> Unit) {
-        listenerJob = coroutineScope.launch {
-            notificationBroadcaster.filter {
-                return@filter bluetoothWatchEndpoints.any { endpoint ->
-                    return@any endpoint.deviceId == it.deviceId
-                        && if (it.serviceId != null && it.characteristicId != null) {
-                            it.serviceId == endpoint.serviceId && it.characteristicId == endpoint.characteristicId
-                        } else {
-                            true
-                        }
-                }
-            }.collect {
-                listener(it)
-            }
-        }
-    }
-
-    fun removeEventListener() {
-        listenerJob?.cancel()
-        listenerJob = null
     }
 }

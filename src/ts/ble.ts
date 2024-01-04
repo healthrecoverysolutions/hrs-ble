@@ -149,35 +149,13 @@ export enum BluetoothEventType {
     READ_RESULT = 'READ_RESULT',
 }
 
-export interface BluetoothDisconnectEventData {
-    message: string;
+export interface BluetoothEventData {
+    message?: string;
+    mtu?: number;
+    status?: number;
+    newState?: number;
+    value?: ArrayBuffer;
 }
-
-export interface BluetoothMtuChangeEventData {
-    mtu: number;
-    status: number;
-}
-
-export interface BluetoothConnectionStateChangeEventData {
-    status: number;
-    newState: number;
-}
-
-export interface BluetoothNotificationEventData {
-    value: ArrayBuffer;
-}
-
-export interface BluetoothReadEventData {
-    status: number;
-    value: ArrayBuffer;
-}
-
-export type BluetoothEventData = PeripheralDataExtended
-    | BluetoothDisconnectEventData
-    | BluetoothMtuChangeEventData
-    | BluetoothConnectionStateChangeEventData
-    | BluetoothNotificationEventData
-    | BluetoothReadEventData;
 
 export interface BluetoothEvent {
     messageId: number;

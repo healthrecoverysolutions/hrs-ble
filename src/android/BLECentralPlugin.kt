@@ -1013,10 +1013,14 @@ class BLECentralPlugin : CordovaPlugin() {
                 )
                 peripherals[device.address] = peripheral
                 if (discoverCallback != null) {
-                    val pluginResult =
-                        PluginResult(PluginResult.Status.OK, peripheral.asJSONObject())
+                    val scanResultData = peripheral.asJSONObject()
+                    val pluginResult = PluginResult(PluginResult.Status.OK, scanResultData)
                     pluginResult.keepCallback = true
                     discoverCallback!!.sendPluginResult(pluginResult)
+                    BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+                        BluetoothEventType.LE_SCAN_RESULT,
+                        data = scanResultData
+                    ))
                 }
             } else {
                 val peripheral = peripherals[address]
@@ -1161,6 +1165,9 @@ class BLECentralPlugin : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.NO_RESULT)
         result.keepCallback = true
         callbackContext.sendPluginResult(result)
+        BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+            BluetoothEventType.LE_SCAN_STARTED
+        ))
     }
 
     @SuppressLint("MissingPermission")
@@ -1181,6 +1188,9 @@ class BLECentralPlugin : CordovaPlugin() {
                 val pluginResult = PluginResult(PluginResult.Status.OK, json)
                 pluginResult.keepCallback = true
                 discoverCallback!!.sendPluginResult(pluginResult)
+                BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+                    BluetoothEventType.LE_SCAN_STOPPED
+                ))
             } catch (e: Exception) {
                 Timber.e("Exception stopping scan %s", e.message)
             }

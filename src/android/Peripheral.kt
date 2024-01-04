@@ -145,6 +145,11 @@ class Peripheral : BluetoothGattCallback {
 
     // notify the phone that the peripheral disconnected
     private fun sendDisconnectMessage(messageContent: String) {
+        BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+            BluetoothEventType.DISCONNECTED,
+            device.address,
+            data = JSONObject().put("message", messageContent)
+        ))
         if (connectCallback != null) {
             val message = this.asJSONObject(messageContent)
             if (autoconnect) {
@@ -161,6 +166,13 @@ class Peripheral : BluetoothGattCallback {
     override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
         super.onMtuChanged(gatt, mtu, status)
         Timber.i("mtu=%d, status=%d", mtu, status)
+        BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+            BluetoothEventType.MTU_CHANGED,
+            device.address,
+            data = JSONObject()
+                .put("mtu", mtu)
+                .put("status", status)
+        ))
         if (status == BluetoothGatt.GATT_SUCCESS) {
             requestMtuCallback!!.success(mtu)
         } else {
@@ -338,7 +350,13 @@ class Peripheral : BluetoothGattCallback {
         // refreshCallback is a kludge for refreshing services, if it exists, it temporarily
         // overrides the connect callback. Unfortunately this edge case make the code confusing.
         if (status == BluetoothGatt.GATT_SUCCESS) {
-            val result = PluginResult(PluginResult.Status.OK, this.asJSONObject(gatt))
+            val discoverData = this.asJSONObject(gatt)
+            val result = PluginResult(PluginResult.Status.OK, discoverData)
+            BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+                BluetoothEventType.CONNECTED,
+                device.address,
+                data = discoverData
+            ))
             result.keepCallback = true
             if (refreshCallback != null) {
                 refreshCallback!!.sendPluginResult(result)
@@ -348,8 +366,15 @@ class Peripheral : BluetoothGattCallback {
             }
         } else {
             Timber.e("Service discovery failed. status = %d", status)
+            val errorMessage = "Service discovery failed"
+            val errorData = this.asJSONObject(errorMessage)
+            BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+                BluetoothEventType.CONNECT_ERROR,
+                device.address,
+                data = errorData
+            ))
             if (refreshCallback != null) {
-                refreshCallback!!.error(this.asJSONObject("Service discovery failed"))
+                refreshCallback!!.error(errorData)
                 refreshCallback = null
             }
             peripheralDisconnected("Service discovery failed")
@@ -385,6 +410,13 @@ class Peripheral : BluetoothGattCallback {
     @SuppressLint("MissingPermission")
     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
         this.gatt = gatt
+        BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+            BluetoothEventType.CONNECTION_STATE_CHANGE,
+            device.address,
+            data = JSONObject()
+                .put("status", status)
+                .put("newState", newState)
+        ))
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             Timber.i("onConnectionStateChange CONNECTED")
             isConnected = true
@@ -430,6 +462,14 @@ class Peripheral : BluetoothGattCallback {
         Timber.i("onCharacteristicChanged %s", characteristic)
         val callback = notificationCallbacks[generateHashKey(characteristic)]
         callback?.sendSequentialResult(characteristic.value)
+        BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+            BluetoothEventType.NOTIFICATION_RESULT,
+            device.address,
+            characteristic.service.uuid.toString(),
+            characteristic.uuid.toString(),
+            JSONObject()
+                .put("value", characteristic.value)
+        ))
     }
 
     override fun onCharacteristicRead(
@@ -440,6 +480,15 @@ class Peripheral : BluetoothGattCallback {
         super.onCharacteristicRead(gatt, characteristic, status)
         Timber.i("onCharacteristicRead %s", characteristic)
         synchronized(this) {
+            BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+                BluetoothEventType.READ_RESULT,
+                device.address,
+                characteristic.service.uuid.toString(),
+                characteristic.uuid.toString(),
+                JSONObject()
+                    .put("status", status)
+                    .put("value", characteristic.value)
+            ))
             if (readCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     readCallback!!.success(characteristic.value)
@@ -579,6 +628,13 @@ class Peripheral : BluetoothGattCallback {
             notificationCallbacks.remove(key)
             commandCompleted()
         }
+
+        BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+            BluetoothEventType.NOTIFICATION_STARTED,
+            device.address,
+            serviceUUID.toString(),
+            characteristicUUID.toString()
+        ))
     }
 
     @SuppressLint("MissingPermission")
@@ -613,6 +669,12 @@ class Peripheral : BluetoothGattCallback {
                 gatt!!.writeDescriptor(descriptor)
             }
             callbackContext.success()
+            BLEEventManager.sharedInstance.sendEvent(BluetoothEvent(
+                BluetoothEventType.NOTIFICATION_STOPPED,
+                device.address,
+                serviceUUID.toString(),
+                characteristicUUID.toString()
+            ))
         } else {
             // TODO we can probably ignore and return success anyway since we removed the notification callback
             callbackContext.error("Failed to stop notification for $characteristicUUID")

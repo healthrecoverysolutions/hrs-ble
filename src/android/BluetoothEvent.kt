@@ -23,7 +23,7 @@ data class BluetoothEvent(
 ) {
     fun toJSON() : JSONObject{
         val json = JSONObject()
-        json.put("messageId", messageId)
+        json.put("messageId", messageId.toInt())
         json.put("type", type.name)
         json.put("deviceId", deviceId)
 

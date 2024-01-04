@@ -375,7 +375,9 @@ class BLECentralPlugin : CordovaPlugin() {
             registerL2CapReceiver(callbackContext, macAddress, psm)
         } else if (action == BLEEventListenerType.SET_EVENT_LISTENER.value) {
             BLEEventManager.sharedInstance.addEventListener { bluetoothEvent ->
-                callbackContext.success(bluetoothEvent.toJSON())
+                val result = PluginResult(PluginResult.Status.OK, bluetoothEvent.toJSON())
+                result.keepCallback = true
+                callbackContext.sendPluginResult(result)
             }
         } else if (action == BLEEventListenerType.REMOVE_EVENT_LISTENER.value) {
             BLEEventManager.sharedInstance.removeEventListener()

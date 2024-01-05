@@ -74,6 +74,7 @@ public class BLECentralPlugin extends CordovaPlugin {
     private static final String CONNECT = "connect";
     private static final String AUTOCONNECT = "autoConnect";
     private static final String DISCONNECT = "disconnect";
+    private static final String CLOSE_CONNECTIONS = "closeConnection";
 
     private static final String QUEUE_CLEANUP = "queueCleanup";
     private static final String SET_PIN = "setPin";
@@ -260,6 +261,11 @@ public class BLECentralPlugin extends CordovaPlugin {
 
             String macAddress = args.getString(0);
             disconnect(callbackContext, macAddress);
+
+        } else if (action.equals(CLOSE_CONNECTIONS)) {
+
+            String macAddress = args.getString(0);
+            closeConnection(callbackContext, macAddress);
 
         } else if (action.equals(QUEUE_CLEANUP)) {
 
@@ -898,6 +904,19 @@ public class BLECentralPlugin extends CordovaPlugin {
                 Timber.e("ERROR: could not remove bond from device");
                 e.printStackTrace();
             }
+            callbackContext.success();
+        } else {
+            String message = "Peripheral " + macAddress + " not found.";
+            LOG.w(TAG, message);
+            callbackContext.error(message);
+        }
+    }
+
+    private void closeConnection(CallbackContext callbackContext, String macAddress) {
+        Peripheral peripheral = peripherals.get(macAddress);
+        if (peripheral != null) {
+            peripheral.disconnect();
+            Timber.i("Closing gatt connections");
             callbackContext.success();
         } else {
             String message = "Peripheral " + macAddress + " not found.";

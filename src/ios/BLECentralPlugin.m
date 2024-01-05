@@ -207,6 +207,11 @@
     }
 }
 
+- (void)closeConnection:(CDVInvokedUrlCommand*)command {
+    NSLog(@"closeConnection");
+    [self disconnect:command];
+}
+
 // read: function (device_id, service_uuid, characteristic_uuid, success, failure) {
 - (void)read:(CDVInvokedUrlCommand*)command {
     NSLog(@"read");

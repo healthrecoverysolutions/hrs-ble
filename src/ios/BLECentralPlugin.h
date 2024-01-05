@@ -53,6 +53,7 @@
 - (void)connect:(CDVInvokedUrlCommand *)command;
 - (void)autoConnect:(CDVInvokedUrlCommand *)command;
 - (void)disconnect:(CDVInvokedUrlCommand *)command;
+- (void)closeConnection:(CDVInvokedUrlCommand *)command;
 
 - (void)read:(CDVInvokedUrlCommand *)command;
 - (void)write:(CDVInvokedUrlCommand *)command;

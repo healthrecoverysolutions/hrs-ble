@@ -145,6 +145,10 @@ module.exports = {
         cordova.exec(success, failure, 'BLE', 'disconnect', [device_id]);
     },
 
+    closeConnection: function (device_id, success, failure) {
+        cordova.exec(success, failure, 'BLE', 'closeConnection', [device_id]);
+    },
+
     queueCleanup: function (device_id, success, failure) {
         cordova.exec(success, failure, 'BLE', 'queueCleanup', [device_id]);
     },

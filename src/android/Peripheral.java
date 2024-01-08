@@ -135,6 +135,7 @@ public class Peripheral extends BluetoothGattCallback {
     // the peripheral disconnected
     // always call connectCallback.error to notify the app
     public void peripheralDisconnected(String message) {
+        Timber.i( "Peripheral disconnected " + message);
         connected = false;
         connecting = false;
 
@@ -150,6 +151,7 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     private void closeGatt() {
+        Timber.i( "Close Gatt");
         BluetoothGatt localGatt;
         synchronized (this) {
             localGatt = this.gatt;
@@ -444,7 +446,7 @@ public class Peripheral extends BluetoothGattCallback {
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
         this.gatt = gatt;
-
+        Timber.i( "Will change connection state from " + status + " to new state " + newState);
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             Timber.i("onConnectionStateChange CONNECTED");
             connected = true;

@@ -1324,10 +1324,15 @@ public class BLECentralPlugin extends CordovaPlugin {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                // Send the result indicating BLE scan is stopped now
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
-                pluginResult.setKeepCallback(true);
-                discoverCallback.sendPluginResult(pluginResult);
+
+                if (discoverCallback != null) {
+                    // Send the result indicating BLE scan is stopped now
+                    PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, json);
+                    pluginResult.setKeepCallback(true);
+                    discoverCallback.sendPluginResult(pluginResult);
+                } else { //just log that callback is null
+                    Timber.i("Stopping Scan callback is null");
+                }
             } catch (Exception e) {
                 Timber.e("Exception stopping scan %s", e.getMessage());
             }

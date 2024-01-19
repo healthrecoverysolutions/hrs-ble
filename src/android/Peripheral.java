@@ -415,8 +415,17 @@ public class Peripheral extends BluetoothGattCallback {
     public enum AUTO_CONNECT_OFF_DEVICES {
         WELCH_SC100("SC100"),
         TNG_SCALE("TNG SCALE"),
-        WELCH_BP100("BP100");
-
+        WELCH_BP100("BP100"),
+        NONIN_3230("Nonin3230"),
+        NIPRO("Nipro"),
+        TRUEAIR("TRUEAIR"),
+        AnDUA651("UA-651"),
+        FORAIR20("IR20"),
+        TD1107("TD1107"),
+        TNGSCALE("TNG SCALE"),
+        AnDUC352("UC-352"),
+        TNGSPO2("TNG SPO2");
+        
         private String text;
 
         AUTO_CONNECT_OFF_DEVICES(String text) {
@@ -432,7 +441,8 @@ public class Peripheral extends BluetoothGattCallback {
                 String text = device.getName();
                 if (text != null ) {
                     for (Peripheral.AUTO_CONNECT_OFF_DEVICES b : Peripheral.AUTO_CONNECT_OFF_DEVICES.values()) {
-                        if(text.equals(b.text)) {
+                        if(text.equals(b.text) || text.contains(b.text)) {
+                            Timber.d("Will retry for the connecting the device -> " + text);
                             return true;
                         }
                     }

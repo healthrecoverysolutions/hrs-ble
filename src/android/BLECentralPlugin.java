@@ -877,7 +877,6 @@ public class BLECentralPlugin extends CordovaPlugin {
                         Bundle bundle = new Bundle();
                         bundle.putString("DEVICE_NAME", this.device.getName());
                         bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-                        bundle.putString("BT_RSSI", "NOT_INITIALIZED"); //TODO Get RSSI for this event
                         mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), bundle);
                         peripheralDevice.connect(callbackContext, cordova.getActivity(), false); // TODO setting this to false to stop auto connecting
                     }
@@ -888,7 +887,6 @@ public class BLECentralPlugin extends CordovaPlugin {
             Bundle bundle = new Bundle();
             bundle.putString("DEVICE_NAME", this.device.getName());
             bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-            bundle.putString("BT_RSSI", "NOT_INITIALIZED"); //TODO Get RSSI for this event
             mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), bundle);
             peripheral.connect(callbackContext, cordova.getActivity(), false);// TODO setting this to false to stop auto connecting
         }

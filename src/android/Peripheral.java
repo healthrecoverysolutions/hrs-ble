@@ -568,7 +568,6 @@ public class Peripheral extends BluetoothGattCallback {
                     Bundle bundle = new Bundle();
                     bundle.putString("DEVICE_NAME", this.device.getName());
                     bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-//                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
                     if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
                         bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
                     }
@@ -578,7 +577,6 @@ public class Peripheral extends BluetoothGattCallback {
                     Bundle bundle = new Bundle();
                     bundle.putString("DEVICE_NAME", this.device.getName());
                     bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-//                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
                     if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
                         bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
                     }

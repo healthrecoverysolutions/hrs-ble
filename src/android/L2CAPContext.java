@@ -18,7 +18,6 @@ import java.util.concurrent.Executors;
 import timber.log.Timber;
 
 class L2CAPContext {
-    private static final String TAG = "L2CAPContext";
 
     private final Object updateLock = new Object();
     private final int psm;

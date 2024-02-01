@@ -116,7 +116,6 @@ public class BLECentralPlugin extends CordovaPlugin {
     CallbackContext discoverCallback;
     private CallbackContext enableBluetoothCallback;
 
-    private static final String TAG = "BLEPlugin";
     private static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
     BluetoothAdapter bluetoothAdapter;
@@ -206,7 +205,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-        Timber.i("action = %s", action);
+        Timber.v("action = %s", action);
 
         if (bluetoothAdapter == null) {
             Activity activity = cordova.getActivity();
@@ -215,7 +214,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                     .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) &&
                     Build.VERSION.SDK_INT >= 18;
             if (!hardwareSupportsBLE) {
-                LOG.w(TAG, "This hardware does not support Bluetooth Low Energy.");
+                Timber.w("This hardware does not support Bluetooth Low Energy.");
                 callbackContext.error("This hardware does not support Bluetooth Low Energy.");
                 return false;
             }
@@ -785,7 +784,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         }
 
         if (bluetoothAdapter.getState() != BluetoothAdapter.STATE_ON) {
-            LOG.w(TAG, "Tried to connect while Bluetooth is disabled.");
+            Timber.w("Tried to connect while Bluetooth is disabled.");
             callbackContext.error("Bluetooth is disabled.");
             return;
         }
@@ -820,7 +819,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         }
 
         if (bluetoothAdapter.getState() != BluetoothAdapter.STATE_ON) {
-            LOG.w(TAG, "Tried to connect while Bluetooth is disabled.");
+            Timber.w("Tried to connect while Bluetooth is disabled.");
             callbackContext.error("Bluetooth is disabled.");
             return;
         }
@@ -858,10 +857,10 @@ public class BLECentralPlugin extends CordovaPlugin {
             } else {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(macAddress);
                 setPairingCallback((btDevice, bondedState) -> {
-                    Timber.i("onPairingComplete Callback:" + btDevice);
-                    Timber.i("onPairingComplete Callback bond state:" + bondedState);
+                    Timber.d("onPairingComplete Callback:" + btDevice);
+                    Timber.d("onPairingComplete Callback bond state:" + bondedState);
                     if(bondedState == BluetoothDevice.BOND_BONDED) {
-                        Timber.i("onPairingComplete Initiate GattConnect:" + btDevice);
+                        Timber.d("onPairingComplete Initiate GattConnect:" + btDevice);
                         Peripheral peripheralDevice = new Peripheral(btDevice);
                         peripheralDevice.connect(callbackContext, cordova.getActivity(), false); // TODO setting this to false to stop auto connecting
                     }
@@ -882,7 +881,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             try {
                 Method method = device.getClass().getMethod("removeBond", (Class[]) null);
                 method.invoke(device, (Object[]) null);
-                Timber.i("Successfully removed bond");
+                Timber.d("Successfully removed bond");
             } catch (Exception e) {
                 Timber.e("ERROR: could not remove bond");
                 e.printStackTrace();
@@ -893,7 +892,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             try {
                 Method method = device.getClass().getMethod("removeBond", (Class[]) null);
                 method.invoke(device, (Object[]) null);
-                Timber.i("Successfully removed bond from device");
+                Timber.d("Successfully removed bond from device");
             } catch (Exception e) {
                 Timber.e("ERROR: could not remove bond from device");
                 e.printStackTrace();
@@ -901,7 +900,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             callbackContext.success();
         } else {
             String message = "Peripheral " + macAddress + " not found.";
-            LOG.w(TAG, message);
+            Timber.w(message);
             callbackContext.error(message);
         }
     }
@@ -956,7 +955,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             peripheral.requestMtu(callbackContext, mtuValue);
         } else {
             String message = "Peripheral " + macAddress + " not found.";
-            LOG.w(TAG, message);
+            Timber.w(message);
             callbackContext.error(message);
         }
     }
@@ -994,7 +993,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             peripheral.refreshDeviceCache(callbackContext, timeoutMillis);
         } else {
             String message = "Peripheral " + macAddress + " not found.";
-            LOG.w(TAG, message);
+            Timber.w(message);
             callbackContext.error(message);
         }
     }
@@ -1155,7 +1154,7 @@ public class BLECentralPlugin extends CordovaPlugin {
     private ScanCallback leScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
-            LOG.w(TAG, "Scan Result");
+            Timber.w("Scan Result");
             super.onScanResult(callbackType, result);
             BluetoothDevice device = result.getDevice();
             String address = device.getAddress();
@@ -1193,7 +1192,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
-            Timber.i("Scan FAILED "  + errorCode);
+            Timber.e("Scan FAILED "  + errorCode);
         }
     };
 
@@ -1205,7 +1204,7 @@ public class BLECentralPlugin extends CordovaPlugin {
     private void findLowEnergyDevices(CallbackContext callbackContext, UUID[] serviceUUIDs, int scanSeconds, ScanSettings scanSettings) {
 
         if (!locationServicesEnabled() && Build.VERSION.SDK_INT < 31) {
-            LOG.w(TAG, "Location Services are disabled");
+            Timber.w("Location Services are disabled");
         }
 
         List<String> missingPermissions = new ArrayList<String>();
@@ -1225,7 +1224,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             } else {
                 String accessBackgroundLocation = this.preferences.getString("accessBackgroundLocation", "false");
                 if (accessBackgroundLocation == "true" &&  !PermissionHelper.hasPermission(this, ACCESS_BACKGROUND_LOCATION)) {
-                    LOG.w(TAG, "ACCESS_BACKGROUND_LOCATION is being requested");
+                    Timber.w("ACCESS_BACKGROUND_LOCATION is being requested");
                     missingPermissions.add(ACCESS_BACKGROUND_LOCATION);
                 }
             }
@@ -1236,7 +1235,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
             String accessBackgroundLocation = this.preferences.getString("accessBackgroundLocation", "false");
             if (accessBackgroundLocation == "true" &&  !PermissionHelper.hasPermission(this, ACCESS_BACKGROUND_LOCATION)) {
-                LOG.w(TAG, "ACCESS_BACKGROUND_LOCATION is being requested");
+                Timber.w("ACCESS_BACKGROUND_LOCATION is being requested");
                 missingPermissions.add(ACCESS_BACKGROUND_LOCATION);
             }
         } else {
@@ -1257,14 +1256,14 @@ public class BLECentralPlugin extends CordovaPlugin {
 
 
         if (bluetoothAdapter.getState() != BluetoothAdapter.STATE_ON) {
-            LOG.w(TAG, "Tried to start scan while Bluetooth is disabled.");
+            Timber.w("Tried to start scan while Bluetooth is disabled.");
             callbackContext.error("Bluetooth is disabled.");
             return;
         }
 
         // return error if already scanning
         if (bluetoothAdapter.isDiscovering()) {
-            LOG.w(TAG, "Tried to start scan while already running.");
+            Timber.w("Tried to start scan while already running.");
             JSONObject jsonErrorObj = new JSONObject();
             try {
                 jsonErrorObj.put("scanErrorMsg", "Tried to start scan while already running.");
@@ -1281,7 +1280,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             Peripheral device = entry.getValue();
             boolean connecting = device.isConnecting();
             if (connecting){
-                Timber.i("Not removing connecting device: " + device.getDevice().getAddress());
+                Timber.d("Not removing connecting device: " + device.getDevice().getAddress());
             }
             if(!entry.getValue().isConnected() && !connecting) {
                 iterator.remove();
@@ -1313,7 +1312,7 @@ public class BLECentralPlugin extends CordovaPlugin {
     private void stopScan() {
         stopScanHandler.removeCallbacks(this::stopScan);
         if (bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON) {
-            Timber.i("Stopping Scan");
+            Timber.v("Stopping Scan");
             try {
                 final BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
                 if (bluetoothLeScanner != null)
@@ -1394,7 +1393,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         if (callback == null) {
             if (grantResults.length > 0) {
                 // There are some odd happenings if permission requests are made while booting up capacitor
-                LOG.w(TAG, "onRequestPermissionResult received with no pending callback");
+                Timber.w("onRequestPermissionResult received with no pending callback");
             }
             return;
         }

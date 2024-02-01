@@ -6,7 +6,6 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 
 import org.apache.cordova.CallbackContext;
-import org.apache.cordova.LOG;
 import org.apache.cordova.PluginResult;
 
 import java.io.IOException;

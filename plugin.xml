@@ -42,6 +42,15 @@
         <!-- frameworks -->
         <framework src="CoreBluetooth.framework" />
 
+        <podspec>
+            <config>
+                <source url="https://cdn.cocoapods.org/" />
+            </config>
+            <pods use-frameworks="true">
+                <pod name="CocoaLumberjack/Swift" spec="~> 3.8" />
+            </pods>
+        </podspec>
+
         <!-- iOS Permissions -->
         <preference name="BLUETOOTH_USAGE_DESCRIPTION" default=" " />
         <config-file target="*-Info.plist" parent="NSBluetoothPeripheralUsageDescription">

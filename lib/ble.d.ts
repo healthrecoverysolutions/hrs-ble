@@ -50,14 +50,26 @@ export interface L2CAPOptions {
     secureChannel?: boolean;
 }
 export declare enum BluetoothEventType {
+    LE_SCAN_STARTED = "LE_SCAN_STARTED",
+    LE_SCAN_STOPPED = "LE_SCAN_STOPPED",
+    LE_SCAN_RESULT = "LE_SCAN_RESULT",
     CONNECTED = "CONNECTED",
+    CONNECTION_STATE_CHANGE = "CONNECTION_STATE_CHANGE",
+    CONNECT_ERROR = "CONNECT_ERROR",
     DISCONNECTED = "DISCONNECTED",
-    READ_RESULT = "READ_RESULT",
+    MTU_CHANGED = "MTU_CHANGED",
     NOTIFICATION_STARTED = "NOTIFICATION_STARTED",
     NOTIFICATION_STOPPED = "NOTIFICATION_STOPPED",
-    NOTIFICATION_RESULT = "NOTIFICATION_RESULT"
+    NOTIFICATION_RESULT = "NOTIFICATION_RESULT",
+    READ_RESULT = "READ_RESULT"
 }
-export type BluetoothEventData = ArrayBuffer;
+export interface BluetoothEventData {
+    message?: string;
+    mtu?: number;
+    status?: number;
+    newState?: number;
+    value?: ArrayBuffer;
+}
 export interface BluetoothEvent {
     messageId: number;
     type: BluetoothEventType;
@@ -84,7 +96,7 @@ export declare class BLEPluginCordovaInterface {
     bridge: CordovaBridge;
     readonly l2cap: L2CAPCordovaInterface;
     constructor(bridge?: CordovaBridge);
-    setEventListener(listener: BluetoothEventListener): Promise<void>;
+    setEventListener(listener: BluetoothEventListener): void;
     removeEventListener(): Promise<void>;
     watch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;
     unwatch(endpoints: BluetoothWatchEndpoint[]): Promise<void>;

@@ -1,0 +1,16 @@
+package com.megster.cordova.ble.central
+
+enum class BluetoothEventType {
+    LE_SCAN_STARTED,
+    LE_SCAN_STOPPED,
+    LE_SCAN_RESULT,
+    CONNECTED,
+    CONNECTION_STATE_CHANGE,
+    CONNECT_ERROR,
+    DISCONNECTED,
+    MTU_CHANGED,
+    NOTIFICATION_STARTED,
+    NOTIFICATION_STOPPED,
+    NOTIFICATION_RESULT,
+    READ_RESULT,
+}

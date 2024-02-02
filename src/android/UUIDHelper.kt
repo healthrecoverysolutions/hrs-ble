@@ -11,38 +11,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.megster.cordova.ble.central
 
-package com.megster.cordova.ble.central;
+import java.util.UUID
+import java.util.regex.Pattern
 
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-public class UUIDHelper {
-
+object UUIDHelper {
     // base UUID used to build 128 bit Bluetooth UUIDs
-    public static final String UUID_BASE = "0000XXXX-0000-1000-8000-00805f9b34fb";
+    const val UUID_BASE = "0000XXXX-0000-1000-8000-00805f9b34fb"
+
     // reuse pattern
-    private static final Pattern pattern = Pattern.compile("0000(.{4})-0000-1000-8000-00805f9b34fb", Pattern.CASE_INSENSITIVE);
+    private val pattern =
+        Pattern.compile("0000(.{4})-0000-1000-8000-00805f9b34fb", Pattern.CASE_INSENSITIVE)
 
     // handle 16 and 128 bit UUIDs
-    public static UUID uuidFromString(String uuid) {
-
-        if (uuid.length() == 4) {
-            uuid = UUID_BASE.replace("XXXX", uuid);
+    fun uuidFromString(uuid: String): UUID {
+        var uuid = uuid
+        if (uuid.length == 4) {
+            uuid = UUID_BASE.replace("XXXX", uuid)
         }
-        return UUID.fromString(uuid);
+        return UUID.fromString(uuid)
     }
 
     // return 16 bit UUIDs where possible
-    public static String uuidToString(UUID uuid) {
-        String longUUID = uuid.toString();
-        Matcher matcher = pattern.matcher(longUUID);
-        if (matcher.matches()) {
+    fun uuidToString(uuid: UUID): String {
+        val longUUID = uuid.toString()
+        val matcher = pattern.matcher(longUUID)
+        return if (matcher.matches()) {
             // 16 bit UUID
-            return matcher.group(1);
+            matcher.group(1)
         } else {
-            return longUUID;
+            longUUID
         }
     }
 }

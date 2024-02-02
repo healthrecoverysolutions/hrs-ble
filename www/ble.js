@@ -66,12 +66,18 @@ exports.CORDOVA_BRIDGE_MOCKED = {
 };
 var BluetoothEventType;
 (function (BluetoothEventType) {
+    BluetoothEventType["LE_SCAN_STARTED"] = "LE_SCAN_STARTED";
+    BluetoothEventType["LE_SCAN_STOPPED"] = "LE_SCAN_STOPPED";
+    BluetoothEventType["LE_SCAN_RESULT"] = "LE_SCAN_RESULT";
     BluetoothEventType["CONNECTED"] = "CONNECTED";
+    BluetoothEventType["CONNECTION_STATE_CHANGE"] = "CONNECTION_STATE_CHANGE";
+    BluetoothEventType["CONNECT_ERROR"] = "CONNECT_ERROR";
     BluetoothEventType["DISCONNECTED"] = "DISCONNECTED";
-    BluetoothEventType["READ_RESULT"] = "READ_RESULT";
+    BluetoothEventType["MTU_CHANGED"] = "MTU_CHANGED";
     BluetoothEventType["NOTIFICATION_STARTED"] = "NOTIFICATION_STARTED";
     BluetoothEventType["NOTIFICATION_STOPPED"] = "NOTIFICATION_STOPPED";
     BluetoothEventType["NOTIFICATION_RESULT"] = "NOTIFICATION_RESULT";
+    BluetoothEventType["READ_RESULT"] = "READ_RESULT";
 })(BluetoothEventType || (exports.BluetoothEventType = BluetoothEventType = {}));
 function stringToArrayBuffer(str) {
     var ret = new Uint8Array(str.length);
@@ -137,7 +143,7 @@ var BLEPluginCordovaInterface = /** @class */ (function () {
         this.l2cap = new L2CAPCordovaInterface(bridge);
     }
     BLEPluginCordovaInterface.prototype.setEventListener = function (listener) {
-        return this.bridge.invoke("setEventListener", listener);
+        this.bridge.invokeCb("setEventListener", listener);
     };
     BLEPluginCordovaInterface.prototype.removeEventListener = function () {
         return this.bridge.invoke("removeEventListener");

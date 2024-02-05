@@ -424,6 +424,7 @@ public class Peripheral extends BluetoothGattCallback {
         TD1107("TD1107"),
         TNGSCALE("TNG SCALE"),
         AnDUC352("UC-352"),
+        TAIDOC_TD8255("TAIDOC TD8255"),
         TNGSPO2("TNG SPO2");
         
         private String text;

@@ -422,11 +422,10 @@ public class Peripheral extends BluetoothGattCallback {
         AnDUA651("UA-651"),
         FORAIR20("IR20"),
         TD1107("TD1107"),
-        TNGSCALE("TNG SCALE"),
         AnDUC352("UC-352"),
         TAIDOC_TD8255("TAIDOC TD8255"),
         TNGSPO2("TNG SPO2");
-        
+
         private String text;
 
         AUTO_CONNECT_OFF_DEVICES(String text) {
@@ -442,8 +441,10 @@ public class Peripheral extends BluetoothGattCallback {
                 String text = device.getName();
                 if (text != null ) {
                     for (Peripheral.AUTO_CONNECT_OFF_DEVICES b : Peripheral.AUTO_CONNECT_OFF_DEVICES.values()) {
+//                        if(text.equals(b.text)) {
+//                            return true;
                         if(text.equals(b.text) || text.contains(b.text)) {
-                            Timber.d("Will retry for the connecting the device -> " + text);
+                            Timber.d("Can retry for the connecting the device if status code is 133 -> " + text);
                             return true;
                         }
                     }
@@ -453,47 +454,81 @@ public class Peripheral extends BluetoothGattCallback {
         }
     }
 
+    private String logConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+        String log = "";
+        log += "** Bluetooth ConnectionStateChangeFor Device " + getGattDeviceName(gatt);
+        log += " Updated bluetooth connection state is " + newState + " ";
+        switch (newState) {
+            case BluetoothGatt.STATE_CONNECTED:
+                log += "STATE_CONNECTED";
+                break;
+            case BluetoothGatt.STATE_CONNECTING:
+                log += "STATE_CONNECTING";
+                break;
+            case BluetoothGatt.STATE_DISCONNECTED:
+                log += "STATE_DISCONNECTED";
+                break;
+            case BluetoothGatt.STATE_DISCONNECTING:
+                log += "STATE_DISCONNECTING";
+                break;
+        }
+        log += " and Status is " + status + " "; // there are many other states which can be apart from success, thus we are also printing the int value
+        switch (status) {
+            case BluetoothGatt.GATT_SUCCESS:
+                log += "GATT_SUCCESS ";
+                break;
+        }
+        return log;
+    }
+
+    private String getGattDeviceName(BluetoothGatt gatt) {
+        String deviceName = "";
+        if (gatt != null && gatt.getDevice() != null) {
+            deviceName = gatt.getDevice().getName();
+        }
+        return deviceName;
+    }
+
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-
+        // status : Status of the connect or disconnect operation
+        // newState : Returns the new connection state. Can be one of BluetoothProfile.STATE_DISCONNECTED or BluetoothProfile#STATE_CONNECTED
         this.gatt = gatt;
-        Timber.i( "Will change connection state from " + status + " to new state " + newState);
+        // Timber.i( "OnConnectionStateChange Status " + status + " to NewState " + newState);
+        Timber.i(logConnectionStateChange(gatt, status, newState));
         if (newState == BluetoothGatt.STATE_CONNECTED) {
-            Timber.i("onConnectionStateChange CONNECTED");
+            Timber.i("onConnectionStateChange CONNECTED " + getGattDeviceName(gatt));
             connected = true;
             connecting = false;
             gatt.discoverServices();
-
-        } else {  // Disconnected
-            Timber.i("On connection state change ---> " + status + " disconnect count " + disconnectCount);
-
-            if (AUTO_CONNECT_OFF_DEVICES.shouldRetryForGatt133Status(this.device)) {
-                Timber.i("Will retry to connect");
-                if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    if (status != 133 || disconnectCount >= 2) { /*If more then 2 count gatt close process*/
-                        disconnectCount = 0;
-                        Timber.i("onConnectionStateChange DISCONNECTED");
-                        connected = false;
-                        peripheralDisconnected("Peripheral Disconnected");
-                    } else { /*reconnection goes here*/
-                        disconnectCount++;
-                        if (connected) {
-                            Timber.i("While retrying after gatt 133, calling to disconnect");
-                            disconnect();
-                        } else {
-                            Timber.i("While retrying after gatt 133, calling to connect");
-                            if (connectCallback!=null && currentActivity!=null) {
-                                Timber.i("Gatt 133 error -> Got callback and trying again to connect -->");
-                                connect(connectCallback, currentActivity, false);
-                            }
+        } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {  // Disconnected
+            Timber.i("onConnectionStateChange STATE_DISCONNECTED " + getGattDeviceName(gatt));
+            if (AUTO_CONNECT_OFF_DEVICES.shouldRetryForGatt133Status(gatt.getDevice())) {
+                // Will retry to connect for two times after we receive Gatt status code 133
+                if (status != 133 || disconnectCount >= 2) { /*If more then 2 count gatt close process*/
+                    disconnectCount = 0;
+                    connected = false;
+                    peripheralDisconnected("Peripheral Disconnected");
+                } else { /*reconnection goes here*/
+                    disconnectCount++;
+                    if (connected) {
+                        Timber.i("Reconnection attempt for device " + getGattDeviceName(gatt) + " after gatt status code : " + status);
+                        disconnect();
+                    } else {
+                        Timber.i("Gatt status code " + status + " for device " + getGattDeviceName(gatt) + " calling to connect");
+                        if (connectCallback != null && currentActivity != null) {
+                            Timber.i("Gatt status code " + status + " for device " + getGattDeviceName(gatt) + " Got callback, trying to Connect again");
+                            connect(connectCallback, currentActivity, false);
                         }
                     }
                 }
             } else {
-                Timber.i("onConnectionStateChange DISCONNECTED");
+                Timber.i("onConnectionStateChange DISCONNECTED for " + getGattDeviceName(gatt));
                 connected = false;
                 peripheralDisconnected("Peripheral Disconnected");
             }
+        } else {
+            Timber.i("onConnectionStateChange else part! " + newState + " " + getGattDeviceName(gatt));
         }
     }
 

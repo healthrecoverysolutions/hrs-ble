@@ -441,6 +441,8 @@ public class Peripheral extends BluetoothGattCallback {
                 String text = device.getName();
                 if (text != null ) {
                     for (Peripheral.AUTO_CONNECT_OFF_DEVICES b : Peripheral.AUTO_CONNECT_OFF_DEVICES.values()) {
+//                        if(text.equals(b.text)) {
+//                            return true;
                         if(text.equals(b.text) || text.contains(b.text)) {
                             return true;
                         }

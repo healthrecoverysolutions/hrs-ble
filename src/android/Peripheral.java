@@ -491,7 +491,6 @@ public class Peripheral extends BluetoothGattCallback {
         // status : Status of the connect or disconnect operation
         // newState : Returns the new connection state. Can be one of BluetoothProfile.STATE_DISCONNECTED or BluetoothProfile#STATE_CONNECTED
         this.gatt = gatt;
-        // Timber.i( "OnConnectionStateChange Status " + status + " to NewState " + newState);
         Timber.i(logConnectionStateChange(gatt, status, newState));
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             Timber.i("onConnectionStateChange CONNECTED " + getGattDeviceName(gatt));

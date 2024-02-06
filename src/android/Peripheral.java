@@ -444,7 +444,6 @@ public class Peripheral extends BluetoothGattCallback {
 //                        if(text.equals(b.text)) {
 //                            return true;
                         if(text.equals(b.text) || text.contains(b.text)) {
-                            Timber.d("Can retry for the connecting the device if status code is 133 -> " + text);
                             return true;
                         }
                     }

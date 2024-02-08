@@ -479,9 +479,6 @@ public class Peripheral extends BluetoothGattCallback {
         // newState : Returns the new connection state. Can be one of BluetoothProfile.STATE_DISCONNECTED or BluetoothProfile#STATE_CONNECTED
         this.gatt = gatt;
         Timber.i(logConnectionStateChange(gatt, status, newState));
-        if(DEVICES_TO_ESCAPE_RETRY.notMatches(gatt.getDevice())){
-            Timber.i("Should not escape retry for " + gatt.getDevice());
-        }
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             Timber.i("onConnectionStateChange CONNECTED " + getGattDeviceName(gatt));
             connected = true;
@@ -517,7 +514,7 @@ public class Peripheral extends BluetoothGattCallback {
             Timber.i("onConnectionStateChange else part! " + newState + " " + getGattDeviceName(gatt));
         }
     }
-    
+
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);

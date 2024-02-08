@@ -408,27 +408,14 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     /**
-     * This enum lists all the BLE devices which dont need Auto connect but require few reconnect attempts when they face Gatt133 connection error
-     * Like, On Samsung Tab A7 , with Welch devices, there was random gatt 133 error while making a connection.
-     * Thus tried to reconnect in case of 133 failure which solves the problem.
+     * This enum lists all the BLE devices which face issues while we perform a retry after disconnection due to gatt error code (133)
      */
-    public enum AUTO_CONNECT_OFF_DEVICES {
-        WELCH_SC100("SC100"),
-        TNG_SCALE("TNG SCALE"),
-        WELCH_BP100("BP100"),
-        NONIN_3230("Nonin3230"),
-        NIPRO("Nipro"),
-        TRUEAIR("TRUEAIR"),
-        AnDUA651("UA-651"),
-        FORAIR20("IR20"),
-        TD1107("TD1107"),
-        AnDUC352("UC-352"),
-        TAIDOC_TD8255("TAIDOC TD8255"),
-        TNGSPO2("TNG SPO2");
+    public enum DEVICES_TO_ESCAPE_RETRY {
+        NO_DEVICE("No device"); // Currently we have allowed to retry for all the supported devices. In future, if there are any exceptions, we can add those devices here
 
         private String text;
 
-        AUTO_CONNECT_OFF_DEVICES(String text) {
+        DEVICES_TO_ESCAPE_RETRY(String text) {
             this.text = text;
         }
 
@@ -436,12 +423,12 @@ public class Peripheral extends BluetoothGattCallback {
             return this.text;
         }
 
-        public static boolean shouldRetryForGatt133Status(BluetoothDevice device) {
+        public static boolean notMatches(BluetoothDevice device) {
             if(device!=null) {
                 String text = device.getName();
                 if (text != null ) {
-                    for (Peripheral.AUTO_CONNECT_OFF_DEVICES b : Peripheral.AUTO_CONNECT_OFF_DEVICES.values()) {
-                        if(text.equals(b.text) || text.contains(b.text)) {
+                    for (DEVICES_TO_ESCAPE_RETRY b : DEVICES_TO_ESCAPE_RETRY.values()) {
+                        if (!text.equals(b.text) || !text.contains(b.text)) {
                             return true;
                         }
                     }
@@ -492,6 +479,9 @@ public class Peripheral extends BluetoothGattCallback {
         // newState : Returns the new connection state. Can be one of BluetoothProfile.STATE_DISCONNECTED or BluetoothProfile#STATE_CONNECTED
         this.gatt = gatt;
         Timber.i(logConnectionStateChange(gatt, status, newState));
+        if(DEVICES_TO_ESCAPE_RETRY.notMatches(gatt.getDevice())){
+            Timber.i("Should not escape retry for " + gatt.getDevice());
+        }
         if (newState == BluetoothGatt.STATE_CONNECTED) {
             Timber.i("onConnectionStateChange CONNECTED " + getGattDeviceName(gatt));
             connected = true;
@@ -499,7 +489,7 @@ public class Peripheral extends BluetoothGattCallback {
             gatt.discoverServices();
         } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {  // Disconnected
             Timber.i("onConnectionStateChange STATE_DISCONNECTED " + getGattDeviceName(gatt));
-            if (AUTO_CONNECT_OFF_DEVICES.shouldRetryForGatt133Status(gatt.getDevice())) {
+            if(DEVICES_TO_ESCAPE_RETRY.notMatches(gatt.getDevice())) { // Retry is allowed for the device
                 // Will retry to connect for two times after we receive Gatt status code 133
                 if (status != 133 || disconnectCount >= 2) { /*If more then 2 count gatt close process*/
                     disconnectCount = 0;
@@ -527,7 +517,7 @@ public class Peripheral extends BluetoothGattCallback {
             Timber.i("onConnectionStateChange else part! " + newState + " " + getGattDeviceName(gatt));
         }
     }
-
+    
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);

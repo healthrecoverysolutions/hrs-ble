@@ -19,6 +19,7 @@ import android.app.Activity;
 import android.bluetooth.*;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import timber.log.Timber;
 
@@ -497,14 +498,18 @@ public class Peripheral extends BluetoothGattCallback {
                     if (connected) {
                         Timber.i("Reconnection attempt for device " + getGattDeviceName(gatt) + " after gatt status code : " + status);
                         disconnect();
-                    } else {
-                        Timber.i("Gatt status code " + status + " for device " + getGattDeviceName(gatt) + " calling to connect");
-                        if (connectCallback != null && currentActivity != null) {
-                            Timber.i("Gatt status code " + status + " for device " + getGattDeviceName(gatt) + " Got callback, trying to Connect again");
-                            connect(connectCallback, currentActivity, false);
+                        } else {
+                                Timber.i("Gatt status code " + status + " for device " + getGattDeviceName(gatt) );
+                                final Handler handler = new Handler(Looper.getMainLooper());
+                                handler.postDelayed(() -> {
+                                    if (connectCallback != null && currentActivity != null) {
+                                        Timber.i("Got callback, Will Retry connection after 100ms");
+                                        connect(connectCallback, currentActivity, false); // it is recommended to retry after 100ms in case of gatt 133 connection issue
+                                    }
+                                }, 100);
+
                         }
                     }
-                }
             } else {
                 Timber.i("onConnectionStateChange DISCONNECTED for " + getGattDeviceName(gatt));
                 connected = false;

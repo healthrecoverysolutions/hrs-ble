@@ -17,6 +17,8 @@
 // limitations under the License.
 
 #import "CBPeripheral+Extensions.h"
+#import <CocoaLumberjack/CocoaLumberjack.h>
+#define ddLogLevel DDLogLevelAll
 
 static char ADVERTISING_IDENTIFER;
 static char SAVED_RSSI_IDENTIFER;
@@ -146,7 +148,7 @@ static NSDictionary *dataToArrayBuffer(NSData* data) {
     // Convert to String keys with Array Buffer values
     NSMutableDictionary *serviceData = [advertisementData objectForKey:CBAdvertisementDataServiceDataKey];
     if (serviceData) {
-        NSLog(@"%@", serviceData);
+        DDLogDebug(@"%@", serviceData);
 
         for (CBUUID *key in [serviceData allKeys]) {
             [serviceData setObject:dataToArrayBuffer([serviceData objectForKey:key]) forKey:[key UUIDString]];
@@ -174,7 +176,7 @@ static NSDictionary *dataToArrayBuffer(NSData* data) {
     NSMutableArray *solicitiedServiceUUIDs = [advertisementData objectForKey:CBAdvertisementDataSolicitedServiceUUIDsKey];
     NSMutableArray *solicitiedServiceUUIDStrings;
     if (solicitiedServiceUUIDs) {
-        // NSLog(@"%@", solicitiedServiceUUIDs);
+        // DDLogDebug(@"%@", solicitiedServiceUUIDs);
         solicitiedServiceUUIDStrings = [[NSMutableArray alloc] initWithCapacity:solicitiedServiceUUIDs.count];
 
         for (CBUUID *uuid in solicitiedServiceUUIDs) {

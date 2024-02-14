@@ -6,7 +6,6 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 
 import org.apache.cordova.CallbackContext;
-import org.apache.cordova.LOG;
 import org.apache.cordova.PluginResult;
 
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.util.concurrent.Executors;
 import timber.log.Timber;
 
 class L2CAPContext {
-    private static final String TAG = "L2CAPContext";
 
     private final Object updateLock = new Object();
     private final int psm;

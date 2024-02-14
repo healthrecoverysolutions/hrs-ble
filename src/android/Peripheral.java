@@ -483,9 +483,11 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     private BluetoothDevice getGattDevice(BluetoothGatt gatt) {
-        BluetoothDevice device = this.device; // a fallback
+        BluetoothDevice device;
         if (gatt != null && gatt.getDevice() != null) {
             device = gatt.getDevice();
+        } else {
+            device = this.device; // a fallback
         }
         return device;
     }
@@ -502,18 +504,7 @@ public class Peripheral extends BluetoothGattCallback {
             connecting = false;
             gatt.discoverServices();
             // Firebase analytics connect event
-            Bundle bundle = new Bundle();
-            SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-            Timber.i(templateDevice.getDisplay());
-            Timber.i(templateDevice.getPeripheralType());
-            bundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-            bundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-            // bundle.putString("DEVICE_NAME", this.getGattDeviceName(gatt));
-            bundle.putString("STATE", "CONNECTED");
-            bundle.putString("PAIRING_STATE", isDevicePaired());
-            if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-            }
+            Bundle bundle = getFirebaseInfoBundle("CONNECTED");
             mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_CONNECTION.toString(), bundle);
         } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {  // Disconnected
             Timber.i("onConnectionStateChange STATE_DISCONNECTED " + getGattDeviceName(gatt));

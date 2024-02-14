@@ -502,35 +502,13 @@ public class Peripheral extends BluetoothGattCallback {
             connecting = false;
             gatt.discoverServices();
             // Firebase analytics connect event
-            Bundle bundle = new Bundle();
-            SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-            Timber.i(templateDevice.getDisplay());
-            Timber.i(templateDevice.getPeripheralType());
-            bundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-            bundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-            // bundle.putString("DEVICE_NAME", this.getGattDeviceName(gatt));
-            bundle.putString("STATE", "CONNECTED");
-            bundle.putString("PAIRING_STATE", isDevicePaired());
-            if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-            }
+            Bundle bundle = getFirebaseInfoBundle("CONNECTED");
             mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_CONNECTION.toString(), bundle);
         } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {  // Disconnected
             Timber.i("onConnectionStateChange STATE_DISCONNECTED " + getGattDeviceName(gatt));
 
             // Firebase disconnect event
-            Bundle bundle = new Bundle();
-            SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-            Timber.i(templateDevice.getDisplay());
-            Timber.i(templateDevice.getPeripheralType());
-            bundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-            bundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-            // bundle.putString("DEVICE_NAME", this.getGattDeviceName(gatt));
-            bundle.putString("STATE", "DISCONNECTED");
-            bundle.putString("PAIRING_STATE", isDevicePaired());
-            if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI)); // TODO
-            }
+            Bundle bundle = getFirebaseInfoBundle("DISCONNECTED");
             bundle.putInt("ERROR_CODE", status); // disconnection status code
             mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_CONNECTION.toString(), bundle);
 
@@ -573,6 +551,25 @@ public class Peripheral extends BluetoothGattCallback {
         return "" + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED)));
     }
 
+    private Bundle getFirebaseInfoBundle(String isConnected) {
+        Bundle bundle = new Bundle();
+        SUPPORTED_PERIPHERAL_TEMPLATE templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.findMatchingDevice(this.device);
+        if(templateDevice!=null) {
+            Timber.i(templateDevice.getDisplay());
+            Timber.i(templateDevice.getPeripheralType());
+            bundle.putString("DEVICE_NAME", templateDevice.getDisplay());
+            bundle.putString("PERIPHERAL_TYPE", templateDevice.getPeripheralType());
+        } else {
+            bundle.putString("DEVICE_NAME", this.device.getName());
+        }
+        bundle.putString("STATE", isConnected);
+        bundle.putString("PAIRING_STATE", isDevicePaired());
+        if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
+            bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI)); // TODO
+        }
+        return bundle;
+    }
+
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
@@ -594,24 +591,24 @@ public class Peripheral extends BluetoothGattCallback {
             if (readCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     readCallback.success(characteristic.getValue());
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-//                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_READING_SUCCESS.toString(), bundle);
+//                    Bundle bundle = new Bundle();
+//                    bundle.putString("DEVICE_NAME", this.device.getName());
+//                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
+////                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
+//                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
+//                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
+//                    }                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_READING_SUCCESS.toString(), bundle);
                 } else {
                     readCallback.error("Error reading " + characteristic.getUuid() + " status=" + status);
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-                    bundle.putInt("REASON", status);
-//                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }
-                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_READING_SUCCESS.toString(), bundle);
+//                    Bundle bundle = new Bundle();
+//                    bundle.putString("DEVICE_NAME", this.device.getName());
+//                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
+//                    bundle.putInt("REASON", status);
+////                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
+//                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
+//                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
+//                    }
+//                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_READING_SUCCESS.toString(), bundle);
 
                 }
 
@@ -631,22 +628,22 @@ public class Peripheral extends BluetoothGattCallback {
             if (writeCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     writeCallback.success();
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }
-                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_WRITE_SUCCESS.toString(), bundle);
+//                    Bundle bundle = new Bundle();
+//                    bundle.putString("DEVICE_NAME", this.device.getName());
+//                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
+//                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
+//                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
+//                    }
+//                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_WRITE_SUCCESS.toString(), bundle);
                 } else {
                     writeCallback.error(status);
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }
-                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_WRITE_FAILURE.toString(), bundle);
+//                    Bundle bundle = new Bundle();
+//                    bundle.putString("DEVICE_NAME", this.device.getName());
+//                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
+//                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
+//                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
+//                    }
+//                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_WRITE_FAILURE.toString(), bundle);
                 }
 
                 writeCallback = null;

@@ -651,7 +651,7 @@ public class BLECentralPlugin extends CordovaPlugin {
             device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             bondedState = device.getBondState();
             onBondStateChangedEvent(/*intent.getExtras(), intent*/intent);
-//            sendBluetoothBondStateChange(bondedState);
+            sendBluetoothBondStateChange(bondedState);
 //            Bundle bundle = new Bundle();
 //            bundle.putString("DEVICE_NAME", this.device.getName());
 //            bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
@@ -680,13 +680,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 /* Possible pairing failed case as Pairing state changed from BOND_BONDING to BOND_NONE */
                 if (previousBondState == BluetoothDevice.BOND_BONDING) {
                     Timber.i("Device " + this.device.getName() + "--> Possible Pairing Failed as pairing state changed from BOND_BONDING to BOND_NONE");
-                    Bundle eventBundle = new Bundle();
-                    SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-                    Timber.i(templateDevice.getDisplay());
-                    Timber.i(templateDevice.getPeripheralType());
-                    eventBundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-                    eventBundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-                    eventBundle.putInt("BT_RSSI", rssi);
+                    Bundle eventBundle = getFirebaseInfoBundle(rssi);
                     mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_FAILURE.toString(), eventBundle);
                 }
                 break;
@@ -696,18 +690,27 @@ public class BLECentralPlugin extends CordovaPlugin {
                 break;
             case BluetoothDevice.BOND_BONDED:
                 Timber.i("Device paired successfully :" + this.device.getName());
-                Bundle eventBundle = new Bundle();
-                SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-                Timber.i(templateDevice.getDisplay());
-                Timber.i(templateDevice.getPeripheralType());
-                eventBundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-                eventBundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-                eventBundle.putInt("BT_RSSI", rssi);
+                Bundle eventBundle = getFirebaseInfoBundle(rssi);
                 mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), eventBundle);
                 break;
             default:
                 break;
         }
+    }
+
+    private Bundle getFirebaseInfoBundle(int rssi) {
+        Bundle bundle = new Bundle();
+        SUPPORTED_PERIPHERAL_TEMPLATE templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.findMatchingDevice(this.device);
+        if(templateDevice!=null) {
+            Timber.i(templateDevice.getDisplay());
+            Timber.i(templateDevice.getPeripheralType());
+            bundle.putString("DEVICE_NAME", templateDevice.getDisplay());
+            bundle.putString("PERIPHERAL_TYPE", templateDevice.getPeripheralType());
+        } else {
+            bundle.putString("DEVICE_NAME", this.device.getName());
+        }
+        bundle.putInt("BT_RSSI", rssi);
+        return bundle;
     }
 
     private void sendBluetoothStateChange(int state) {

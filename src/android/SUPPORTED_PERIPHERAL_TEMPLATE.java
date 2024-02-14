@@ -4,52 +4,67 @@ import android.bluetooth.BluetoothDevice;
 
 import timber.log.Timber;
 
-public class SUPPORTED_PERIPHERAL_TEMPLATE {
+public enum SUPPORTED_PERIPHERAL_TEMPLATE {
 
-    public enum TEMPLATE_DEVICES {
-        UA_651("UA-651", "bloodpressure"), // A&D_UA-651BLE_B5583A
-        UA_767("UA-767", "bloodpressure"),
-        BP100("BP100", "bloodpressure"),
-        IR20("IR20B", "temperature"),
-        UC_352("UC-352", "weight");
-        private String display;
-        private String peripheralType;
-        TEMPLATE_DEVICES(String display, String peripheralType) {
-            this.display = display;
-            this.peripheralType = peripheralType;
-        }
+    IR20("IR20", "temperature"),
+    TD1107("TD1107", "temperature"),
+    Taidoc_Device("Taidoc-Device", "temperature"),
+    TNG_SCALE("TNG SCALE", "weight"),
+    UC_351("UC-351", "weight"),
+    UC_352("UC-352", "weight"),
+    UC_355("UC-355", "weight"),
+    SC100("SC100", "weight"),
+    TD8255("TD8255", "pulseox"),
+    SPO2("SPO2", "pulseox"),
+    Nonin_Medical("Nonin_Medical", "pulseox"),
+    Nonin3230("Nonin3230", "pulseox"),
+    Nipro("Nipro", "glucose"),
+    TRUEAIR("TRUEAIR", "glucose"),
+    TEST_N_GO("TEST-N-GO", "glucose"),
+    UA_651("UA-651", "bloodpressure"), // A&D_UA-651BLE_B5583A
+    UA_767("UA-767", "bloodpressure"),
+    BP100("BP100", "bloodpressure"),
+    TNG("TNG", "bloodpressure"); // as TNG SCALE has the name same as TNG, this should be placed at the last. values() will return array in the order they are declared
 
-        public static TEMPLATE_DEVICES findMatchingDevice(BluetoothDevice device) {
-            if (device != null) {
-                String text = device.getName();
-                Timber.i("Text ------> " + text);
-                if (text != null) {
-                    for (TEMPLATE_DEVICES b : TEMPLATE_DEVICES.values()) {
-                        Timber.i("b.display " + b.getDisplay());
-                        Timber.i("b.peripheralType " + b.peripheralType);
-                        if (text.contains(b.getDisplay())) {
-                            Timber.i("Found device " + text);
-                            return b;
-                        }
+    private String display;
+    private String peripheralType;
+
+    SUPPORTED_PERIPHERAL_TEMPLATE(String display, String peripheralType) {
+        this.display = display;
+        this.peripheralType = peripheralType;
+    }
+    public static SUPPORTED_PERIPHERAL_TEMPLATE findMatchingDevice(BluetoothDevice device) {
+        if (device != null) {
+            String text = device.getName();
+            Timber.i("Text ------> " + text);
+            if (text != null) {
+                for (SUPPORTED_PERIPHERAL_TEMPLATE b : SUPPORTED_PERIPHERAL_TEMPLATE.values()) {
+                    // TNG SCALE contain TNG --> true
+                    if (text.contains(b.getDisplay())) {
+                        Timber.i("Found supported device " + text + " which matches enum value " + b.getDisplay());
+                        return b;
                     }
                 }
             }
-            // return false;
-            return null;
         }
-
-        public String getDisplay() {
-            return display;
-        }
-
-        public String getPeripheralType() {
-            return peripheralType;
-        }
+        // return false;
+        return null;
     }
+
+    public String getDisplay() {
+        return display;
+    }
+
+    public String getPeripheralType() {
+        return peripheralType;
+    }
+
+
 }
 
-//
-//
+
+
+
 //    const templateDevices: TemplateDevices = {
 //        bloodpressure: [
 //        {
@@ -158,30 +173,7 @@ public class SUPPORTED_PERIPHERAL_TEMPLATE {
 //    ]
 //    };
 //
-//    export type TemplateDevices = {
-//    [key in PeripheralTypes]: TemplateDevice[];
-//    };
-//
-//    export type TemplateDevice = {
-//        name: string;
-//        display: string;
-//        hrsTabOnly: boolean;
-//    };
-//
+
 //    export type PeripheralTypes = 'bloodpressure' | 'glucose' | 'pulseox' | 'weight' | 'temperature';
-//
-//    export const fitbitDevice = {
-//        type: 'FitBit',
-//            imageURL: '/../../../assets/icon/Fitbit_logo_RGB.svg'
-//    };
-//
-//    export const activityDevices = [
-//    fitbitDevice
-//];
-//
-//    export interface ActivityDevice {
-//        type: string,
-//        name?: string,
-//        imageURL: string
-//    }
+
 

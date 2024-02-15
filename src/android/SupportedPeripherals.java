@@ -1,14 +1,13 @@
 package com.megster.cordova.ble.central;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Pair;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import timber.log.Timber;
 
-public enum SUPPORTED_PERIPHERAL_TEMPLATE {
+public enum SupportedPeripherals {
 
     IR20("Foracare IR20B", "temperature","(.*IR20.*$).*"),
     TD1107("Taidoc TD1107", "temperature","(.*TD1107.*$).*"),
@@ -34,18 +33,18 @@ public enum SUPPORTED_PERIPHERAL_TEMPLATE {
     private String peripheralType;
     public Pattern namePattern;
 
-    SUPPORTED_PERIPHERAL_TEMPLATE(String display, String peripheralType, String patternStr) {
+    SupportedPeripherals(String display, String peripheralType, String patternStr) {
         this.display = display;
         this.peripheralType = peripheralType;
         this.namePattern = getNamePattern(patternStr);
     }
 
-    public static SUPPORTED_PERIPHERAL_TEMPLATE findMatchingDevice(BluetoothDevice device) {
+    public static SupportedPeripherals findMatchingDevice(BluetoothDevice device) {
         if (device != null) {
               String deviceName = device.getName();
 //            Timber.i("Text ------> " + text);
             if (deviceName != null) {
-                for (SUPPORTED_PERIPHERAL_TEMPLATE b : SUPPORTED_PERIPHERAL_TEMPLATE.values()) {
+                for (SupportedPeripherals b : SupportedPeripherals.values()) {
                     if (b.namePattern.matcher(deviceName).matches()) {
                         Timber.i("Found supported device " + device + " which matches enum value " + b.getDisplay());
                         return b;

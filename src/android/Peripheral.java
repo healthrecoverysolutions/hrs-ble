@@ -553,7 +553,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     private Bundle getFirebaseInfoBundle(String isConnected) {
         Bundle bundle = new Bundle();
-        SUPPORTED_PERIPHERAL_TEMPLATE templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.findMatchingDevice(this.device);
+        SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
         if(templateDevice!=null) {
             Timber.i(templateDevice.getDisplay());
             Timber.i(templateDevice.getPeripheralType());

@@ -573,6 +573,28 @@ public class Peripheral extends BluetoothGattCallback {
         return "" + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED)));
     }
 
+<<<<<<< HEAD
+=======
+    private Bundle getFirebaseInfoBundle(String isConnected) {
+        Bundle bundle = new Bundle();
+        SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
+        if(templateDevice!=null) {
+            Timber.i(templateDevice.getDisplay());
+            Timber.i(templateDevice.getPeripheralType());
+            bundle.putString("DEVICE_NAME", templateDevice.getDisplay());
+            bundle.putString("PERIPHERAL_TYPE", templateDevice.getPeripheralType());
+        } else {
+            bundle.putString("DEVICE_NAME", this.device.getName());
+        }
+        bundle.putString("STATE", isConnected);
+        bundle.putString("PAIRING_STATE", isDevicePaired());
+        if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
+            bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI)); // TODO
+        }
+        return bundle;
+    }
+
+>>>>>>> 3fd349f (WIP added supported peripherals and logic to copy the files)
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);

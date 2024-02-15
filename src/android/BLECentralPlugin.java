@@ -710,6 +710,24 @@ public class BLECentralPlugin extends CordovaPlugin {
         }
     }
 
+<<<<<<< HEAD
+=======
+    private Bundle getFirebaseInfoBundle(int rssi) {
+        Bundle bundle = new Bundle();
+        SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
+        if(templateDevice!=null) {
+            Timber.i(templateDevice.getDisplay());
+            Timber.i(templateDevice.getPeripheralType());
+            bundle.putString("DEVICE_NAME", templateDevice.getDisplay());
+            bundle.putString("PERIPHERAL_TYPE", templateDevice.getPeripheralType());
+        } else {
+            bundle.putString("DEVICE_NAME", this.device.getName());
+        }
+        bundle.putInt("BT_RSSI", rssi);
+        return bundle;
+    }
+
+>>>>>>> 3fd349f (WIP added supported peripherals and logic to copy the files)
     private void sendBluetoothStateChange(int state) {
         if (this.stateCallback != null) {
             PluginResult result = new PluginResult(PluginResult.Status.OK, this.bluetoothStates.get(state));

@@ -723,7 +723,13 @@ public class BLECentralPlugin extends CordovaPlugin {
         } else {
             bundle.putString("DEVICE_NAME", this.device.getName());
         }
-        bundle.putInt("BT_RSSI", rssi);
+        if(peripherals!=null) {
+            Peripheral scannedInstance = peripherals.get(this.device.getAddress());
+            if (scannedInstance != null) {
+                Timber.i("Scanned instance  RSSI " + scannedInstance.advertisingRSSI);
+                bundle.putInt("BT_RSSI", scannedInstance.advertisingRSSI);
+            }
+        }
         return bundle;
     }
 
@@ -940,20 +946,12 @@ public class BLECentralPlugin extends CordovaPlugin {
                     if(bondedState == BluetoothDevice.BOND_BONDED) {
                         Timber.i("onPairingComplete Initiate GattConnect:" + btDevice);
                         Peripheral peripheralDevice = new Peripheral(btDevice, mFirebaseAnalytics);
-//                        Bundle bundle = new Bundle();
-//                        bundle.putString("DEVICE_NAME", this.device.getName());
-//                        bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-//                        mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), bundle);
                         peripheralDevice.connect(callbackContext, cordova.getActivity(), false); // TODO setting this to false to stop auto connecting
                     }
                 });
                 device.createBond();
             }
         } else {
-//            Bundle bundle = new Bundle();
-//            bundle.putString("DEVICE_NAME", this.device.getName());
-//            bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-//            mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), bundle);
             peripheral.connect(callbackContext, cordova.getActivity(), false);// TODO setting this to false to stop auto connecting
         }
 

@@ -569,12 +569,46 @@ public class Peripheral extends BluetoothGattCallback {
 
     private String isDevicePaired() {
         Timber.i("Bond state -> " + this.getGattDevice(gatt).getBondState());
-        Timber.i("isPaired -> " + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED))));
-        return "" + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED)));
+        if (NATIVE_PAIRING_NOT_SUPPORTED_DEVICES.matches(this.getGattDevice(gatt))) {
+            Timber.i("This device does not support native pairing " + this.getGattDevice(gatt).getName());
+            return "NA";
+        }else {
+            Timber.i("isPaired -> " + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED))));
+            return "" + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED)));
+        }
+
     }
 
-<<<<<<< HEAD
-=======
+    enum NATIVE_PAIRING_NOT_SUPPORTED_DEVICES {
+        WELCH_SC100("SC100"),
+        WELCH_BP100("BP100"),
+        FORAIR20("IR20");
+
+        private String text;
+
+        NATIVE_PAIRING_NOT_SUPPORTED_DEVICES(String text) {
+            this.text = text;
+        }
+
+        public String getText() {
+            return this.text;
+        }
+
+        public static boolean matches(BluetoothDevice device) {
+            if(device!=null) {
+                String text = device.getName();
+                if (text != null ) {
+                    for (NATIVE_PAIRING_NOT_SUPPORTED_DEVICES b : NATIVE_PAIRING_NOT_SUPPORTED_DEVICES.values()) {
+                        if (text.equals(b.text) || text.contains(b.text)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
     private Bundle getFirebaseInfoBundle(String isConnected) {
         Bundle bundle = new Bundle();
         SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
@@ -594,7 +628,6 @@ public class Peripheral extends BluetoothGattCallback {
         return bundle;
     }
 
->>>>>>> 3fd349f (WIP added supported peripherals and logic to copy the files)
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);

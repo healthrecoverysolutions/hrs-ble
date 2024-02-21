@@ -669,24 +669,17 @@ public class BLECentralPlugin extends CordovaPlugin {
      * BOND_BONDING --> BOND_NONE : Pairing error, as pairing was not completed to BOND_BONDED status
      * BOND_BONDING --> BOND_BONDED : Pairing completed
      **/
-    private void onBondStateChangedEvent(/*Bundle bundle, */Intent intent) {
-        int rssi = intent.getExtras().getInt(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE); // TODO
+    private void onBondStateChangedEvent(Intent intent) {
         int newBondState = intent.getExtras().getInt(BluetoothDevice.EXTRA_BOND_STATE);
         int previousBondState = intent.getExtras().getInt(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE);
-        Timber.i("Device " + this.device.getName() + " RSSI " + rssi + " Previous bond state: " + previousBondState + " --> New bond state: " + newBondState);
+        Timber.i("Device " + this.device.getName() + " Previous bond state: " + previousBondState + " --> New bond state: " + newBondState);
 
         switch (newBondState) {
             case BluetoothDevice.BOND_NONE:
                 /* Possible pairing failed case as Pairing state changed from BOND_BONDING to BOND_NONE */
                 if (previousBondState == BluetoothDevice.BOND_BONDING) {
                     Timber.i("Device " + this.device.getName() + "--> Possible Pairing Failed as pairing state changed from BOND_BONDING to BOND_NONE");
-                    Bundle eventBundle = new Bundle();
-                    SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-                    Timber.i(templateDevice.getDisplay());
-                    Timber.i(templateDevice.getPeripheralType());
-                    eventBundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-                    eventBundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-                    eventBundle.putInt("BT_RSSI", rssi);
+                    Bundle eventBundle = getFirebaseInfoBundle();
                     mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_FAILURE.toString(), eventBundle);
                 }
                 break;
@@ -696,13 +689,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 break;
             case BluetoothDevice.BOND_BONDED:
                 Timber.i("Device paired successfully :" + this.device.getName());
-                Bundle eventBundle = new Bundle();
-                SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-                Timber.i(templateDevice.getDisplay());
-                Timber.i(templateDevice.getPeripheralType());
-                eventBundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-                eventBundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-                eventBundle.putInt("BT_RSSI", rssi);
+                Bundle eventBundle = getFirebaseInfoBundle();
                 mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), eventBundle);
                 break;
             default:
@@ -710,9 +697,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         }
     }
 
-<<<<<<< HEAD
-=======
-    private Bundle getFirebaseInfoBundle(int rssi) {
+    private Bundle getFirebaseInfoBundle() {
         Bundle bundle = new Bundle();
         SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
         if(templateDevice!=null) {
@@ -733,7 +718,6 @@ public class BLECentralPlugin extends CordovaPlugin {
         return bundle;
     }
 
->>>>>>> 3fd349f (WIP added supported peripherals and logic to copy the files)
     private void sendBluetoothStateChange(int state) {
         if (this.stateCallback != null) {
             PluginResult result = new PluginResult(PluginResult.Status.OK, this.bluetoothStates.get(state));

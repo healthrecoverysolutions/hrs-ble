@@ -669,18 +669,17 @@ public class BLECentralPlugin extends CordovaPlugin {
      * BOND_BONDING --> BOND_NONE : Pairing error, as pairing was not completed to BOND_BONDED status
      * BOND_BONDING --> BOND_BONDED : Pairing completed
      **/
-    private void onBondStateChangedEvent(/*Bundle bundle, */Intent intent) {
-        int rssi = intent.getExtras().getInt(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE); // TODO
+    private void onBondStateChangedEvent(Intent intent) {
         int newBondState = intent.getExtras().getInt(BluetoothDevice.EXTRA_BOND_STATE);
         int previousBondState = intent.getExtras().getInt(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE);
-        Timber.i("Device " + this.device.getName() + " RSSI " + rssi + " Previous bond state: " + previousBondState + " --> New bond state: " + newBondState);
+        Timber.i("Device " + this.device.getName() + " Previous bond state: " + previousBondState + " --> New bond state: " + newBondState);
 
         switch (newBondState) {
             case BluetoothDevice.BOND_NONE:
                 /* Possible pairing failed case as Pairing state changed from BOND_BONDING to BOND_NONE */
                 if (previousBondState == BluetoothDevice.BOND_BONDING) {
                     Timber.i("Device " + this.device.getName() + "--> Possible Pairing Failed as pairing state changed from BOND_BONDING to BOND_NONE");
-                    Bundle eventBundle = getFirebaseInfoBundle(rssi);
+                    Bundle eventBundle = getFirebaseInfoBundle();
                     mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_FAILURE.toString(), eventBundle);
                 }
                 break;
@@ -690,7 +689,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 break;
             case BluetoothDevice.BOND_BONDED:
                 Timber.i("Device paired successfully :" + this.device.getName());
-                Bundle eventBundle = getFirebaseInfoBundle(rssi);
+                Bundle eventBundle = getFirebaseInfoBundle();
                 mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), eventBundle);
                 break;
             default:
@@ -698,7 +697,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         }
     }
 
-    private Bundle getFirebaseInfoBundle(int rssi) {
+    private Bundle getFirebaseInfoBundle() {
         Bundle bundle = new Bundle();
         SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
         if(templateDevice!=null) {

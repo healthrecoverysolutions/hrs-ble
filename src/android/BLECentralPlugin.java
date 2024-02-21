@@ -919,7 +919,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 || pairedDevice.getName().contains("IR20") || pairedDevice.getName().contains("TAIDOC TD8255")
                 || pairedDevice.getName().contains("TD1107") || pairedDevice.getName().contains("Nonin3230")
         )) {
-            Timber.i("Bond State for Version > 29" + peripheral.getDevice().getBondState());
+            Timber.i("Bond State for Version > 29 : " + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
                 peripheral.connect(callbackContext, cordova.getActivity(), false);// TODO setting this to false to stop auto connecting
             } else {

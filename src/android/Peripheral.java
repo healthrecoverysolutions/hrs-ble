@@ -579,6 +579,9 @@ public class Peripheral extends BluetoothGattCallback {
 
     }
 
+    /**
+     * This enum will contain devices for which cannot be natively paired
+     */
     enum NATIVE_PAIRING_NOT_SUPPORTED_DEVICES {
         WELCH_SC100("SC100"),
         WELCH_BP100("BP100"),
@@ -649,25 +652,8 @@ public class Peripheral extends BluetoothGattCallback {
             if (readCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     readCallback.success(characteristic.getValue());
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-//                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_READING_SUCCESS.toString(), bundle);
                 } else {
                     readCallback.error("Error reading " + characteristic.getUuid() + " status=" + status);
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-                    bundle.putInt("REASON", status);
-//                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }
-                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_READING_SUCCESS.toString(), bundle);
-
                 }
 
                 readCallback = null;
@@ -686,22 +672,8 @@ public class Peripheral extends BluetoothGattCallback {
             if (writeCallback != null) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     writeCallback.success();
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }
-                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_WRITE_SUCCESS.toString(), bundle);
                 } else {
                     writeCallback.error(status);
-                    Bundle bundle = new Bundle();
-                    bundle.putString("DEVICE_NAME", this.device.getName());
-                    bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-                    if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                        bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI));
-                    }
-                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_WRITE_FAILURE.toString(), bundle);
                 }
 
                 writeCallback = null;

@@ -650,13 +650,8 @@ public class BLECentralPlugin extends CordovaPlugin {
         } else if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
             device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             bondedState = device.getBondState();
-            onBondStateChangedEvent(/*intent.getExtras(), intent*/intent);
+            onBondStateChangedEvent(intent);
             sendBluetoothBondStateChange(bondedState);
-//            Bundle bundle = new Bundle();
-//            bundle.putString("DEVICE_NAME", this.device.getName());
-//            bundle.putInt("PERIPHERAL_TYPE", this.device.getType());
-////                    bundle.putInt("READING_TIMEDIFF_OFFSET", );
-//            mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), bundle);
             if(pairingCallback != null){
                 pairingCallback.onPairingCompleted(device, bondedState);
             }

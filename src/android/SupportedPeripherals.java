@@ -1,6 +1,7 @@
 package com.megster.cordova.ble.central;
 
 import android.bluetooth.BluetoothDevice;
+import android.util.Log;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -32,6 +33,8 @@ public enum SupportedPeripherals {
     private String display;
     private String peripheralType;
     public Pattern namePattern;
+
+    private static final String TAG = "SupportedPeripherals";
 
     SupportedPeripherals(String display, String peripheralType, String patternStr) {
         this.display = display;
@@ -76,19 +79,15 @@ public enum SupportedPeripherals {
                 if (pattern.indexOf("/") == 0 && pattern.contains("/i")) {
                     pattern = pattern.substring(1, pattern.indexOf("/i"));
                     pattern = quotePattern(pattern);
-                    System.out.println("using case insensitive namePattern: " + pattern);
-                    // Logger.log(true, "i", TAG, "using case insensitive namePattern: " + pattern);
+                    Log.d(TAG, "using case insensitive namePattern: " + pattern);
                     return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
                 }
-                System.out.println("using namePattern: " + pattern);
-                // Logger.log(true, "i", TAG, "using namePattern: " + pattern);
+                Log.d(TAG, "using namePattern: " + pattern);
                 pattern = quotePattern(pattern);
                 return Pattern.compile(pattern);
             }
         } catch (PatternSyntaxException e) {
-            // e.printStacktrace();
-            System.out.println("PatternSyntaxException in getNamePattern(): " + e);
-            // Logger.log(true, "e", TAG, "PatternSyntaxException in getNamePattern(): " + e);
+            Log.d(TAG, "PatternSyntaxException in getNamePattern(): " + e);
         }
         return null;
     }

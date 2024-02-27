@@ -483,9 +483,11 @@ public class Peripheral extends BluetoothGattCallback {
     }
 
     private BluetoothDevice getGattDevice(BluetoothGatt gatt) {
-        BluetoothDevice device = this.device; // a fallback
+        BluetoothDevice device;
         if (gatt != null && gatt.getDevice() != null) {
             device = gatt.getDevice();
+        } else {
+            device = this.device; // a fallback
         }
         return device;
     }

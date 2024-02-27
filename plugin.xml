@@ -94,6 +94,10 @@
             target-dir="src/com/megster/cordova/ble/central"/>
         <source-file src="src/android/L2CAPContext.java"
             target-dir="src/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/SupportedPeripherals.java"
+            target-dir="src/com/megster/cordova/ble/central"/>
+        <source-file src="src/android/BTAnalyticsLogTypes.java"
+            target-dir="src/com/megster/cordova/ble/central"/>
         <framework src="com.jakewharton.timber:timber:5.0.1" />
     </platform>
 

@@ -18,9 +18,13 @@ import android.app.Activity;
 
 import android.bluetooth.*;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
+
+import com.google.firebase.analytics.FirebaseAnalytics;
+
 import timber.log.Timber;
 
 import org.apache.cordova.CallbackContext;
@@ -50,7 +54,7 @@ public class Peripheral extends BluetoothGattCallback {
 
     private BluetoothDevice device;
     private byte[] advertisingData;
-    private int advertisingRSSI;
+    public int advertisingRSSI;
     private boolean autoconnect = false;
     private boolean connected = false;
     private boolean connecting = false;
@@ -70,18 +74,22 @@ public class Peripheral extends BluetoothGattCallback {
 
     private Map<String, SequentialCallbackContext> notificationCallbacks = new HashMap<String, SequentialCallbackContext>();
 
-    public Peripheral(BluetoothDevice device) {
+    private FirebaseAnalytics mFirebaseAnalytics;
+
+    public Peripheral(BluetoothDevice device, FirebaseAnalytics firebaseAnalytics) {
 
         Timber.i("Creating un-scanned peripheral entry for address: %s", device.getAddress());
 
+        this.mFirebaseAnalytics = firebaseAnalytics;
         this.device = device;
         this.advertisingRSSI = FAKE_PERIPHERAL_RSSI;
         this.advertisingData = null;
 
     }
 
-    public Peripheral(BluetoothDevice device, int advertisingRSSI, byte[] scanRecord) {
+    public Peripheral(BluetoothDevice device, int advertisingRSSI, byte[] scanRecord, FirebaseAnalytics firebaseAnalytics) {
 
+        this.mFirebaseAnalytics = firebaseAnalytics;
         this.device = device;
         this.advertisingRSSI = advertisingRSSI;
         this.advertisingData = scanRecord;
@@ -474,6 +482,16 @@ public class Peripheral extends BluetoothGattCallback {
         return deviceName;
     }
 
+    private BluetoothDevice getGattDevice(BluetoothGatt gatt) {
+        BluetoothDevice device;
+        if (gatt != null && gatt.getDevice() != null) {
+            device = gatt.getDevice();
+        } else {
+            device = this.device; // a fallback
+        }
+        return device;
+    }
+
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         // status : Status of the connect or disconnect operation
@@ -485,8 +503,17 @@ public class Peripheral extends BluetoothGattCallback {
             connected = true;
             connecting = false;
             gatt.discoverServices();
+            // Firebase analytics connect event
+            Bundle bundle = getFirebaseInfoBundle("CONNECTED");
+            mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_CONNECTION.toString(), bundle);
         } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {  // Disconnected
             Timber.i("onConnectionStateChange STATE_DISCONNECTED " + getGattDeviceName(gatt));
+
+            // Firebase disconnect event
+            Bundle bundle = getFirebaseInfoBundle("DISCONNECTED");
+            bundle.putInt("ERROR_CODE", status); // disconnection status code
+            mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_CONNECTION.toString(), bundle);
+
             if(DEVICES_TO_ESCAPE_RETRY.notMatches(gatt.getDevice())) { // Retry is allowed for the device
                 // Will retry to connect for two times after we receive Gatt status code 133
                 if (status != 133 || disconnectCount >= 2) { /*If more then 2 count gatt close process*/
@@ -498,18 +525,18 @@ public class Peripheral extends BluetoothGattCallback {
                     if (connected) {
                         Timber.i("Reconnection attempt for device " + getGattDeviceName(gatt) + " after gatt status code : " + status);
                         disconnect();
-                        } else {
-                                Timber.i("Gatt status code " + status + " for device " + getGattDeviceName(gatt) );
-                                final Handler handler = new Handler(Looper.getMainLooper());
-                                handler.postDelayed(() -> {
-                                    if (connectCallback != null && currentActivity != null) {
-                                        Timber.i("Got callback, Will Retry connection after 100ms");
-                                        connect(connectCallback, currentActivity, false); // it is recommended to retry after 100ms in case of gatt 133 connection issue
-                                    }
-                                }, 100);
+                    } else {
+                        Timber.i("Gatt status code " + status + " for device " + getGattDeviceName(gatt) );
+                        final Handler handler = new Handler(Looper.getMainLooper());
+                        handler.postDelayed(() -> {
+                            if (connectCallback != null && currentActivity != null) {
+                                Timber.i("Got callback, Will Retry connection after 100ms");
+                                connect(connectCallback, currentActivity, false); // it is recommended to retry after 100ms in case of gatt 133 connection issue
+                            }
+                        }, 100);
 
-                        }
                     }
+                }
             } else {
                 Timber.i("onConnectionStateChange DISCONNECTED for " + getGattDeviceName(gatt));
                 connected = false;
@@ -518,6 +545,70 @@ public class Peripheral extends BluetoothGattCallback {
         } else {
             Timber.i("onConnectionStateChange else part! " + newState + " " + getGattDeviceName(gatt));
         }
+    }
+
+    private String isDevicePaired() {
+        Timber.i("Bond state -> " + this.getGattDevice(gatt).getBondState());
+        if (NATIVE_PAIRING_NOT_SUPPORTED_DEVICES.matches(this.getGattDevice(gatt))) {
+            Timber.i("This device does not support native pairing " + this.getGattDevice(gatt).getName());
+            return "NA";
+        }else {
+            Timber.i("isPaired -> " + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED))));
+            return "" + (new Integer(this.getGattDevice(gatt).getBondState()).equals(new Integer(BluetoothDevice.BOND_BONDED)));
+        }
+
+    }
+
+    /**
+     * This enum will contain devices for which cannot be natively paired
+     */
+    enum NATIVE_PAIRING_NOT_SUPPORTED_DEVICES {
+        WELCH_SC100("SC100"),
+        WELCH_BP100("BP100"),
+        FORAIR20("IR20");
+
+        private String text;
+
+        NATIVE_PAIRING_NOT_SUPPORTED_DEVICES(String text) {
+            this.text = text;
+        }
+
+        public String getText() {
+            return this.text;
+        }
+
+        public static boolean matches(BluetoothDevice device) {
+            if(device!=null) {
+                String text = device.getName();
+                if (text != null ) {
+                    for (NATIVE_PAIRING_NOT_SUPPORTED_DEVICES b : NATIVE_PAIRING_NOT_SUPPORTED_DEVICES.values()) {
+                        if (text.equals(b.text) || text.contains(b.text)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    private Bundle getFirebaseInfoBundle(String isConnected) {
+        Bundle bundle = new Bundle();
+        SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
+        if(templateDevice!=null) {
+            Timber.i(templateDevice.getDisplay());
+            Timber.i(templateDevice.getPeripheralType());
+            bundle.putString("DEVICE_NAME", templateDevice.getDisplay());
+            bundle.putString("PERIPHERAL_TYPE", templateDevice.getPeripheralType());
+        } else {
+            bundle.putString("DEVICE_NAME", this.device.getName());
+        }
+        bundle.putString("STATE", isConnected);
+        bundle.putString("PAIRING_STATE", isDevicePaired());
+        if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
+            bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI)); // TODO
+        }
+        return bundle;
     }
 
     @Override

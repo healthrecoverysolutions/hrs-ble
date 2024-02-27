@@ -28,6 +28,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -56,6 +57,8 @@ import java.util.*;
 
 import static android.bluetooth.BluetoothDevice.DEVICE_TYPE_DUAL;
 import static android.bluetooth.BluetoothDevice.DEVICE_TYPE_LE;
+
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class BLECentralPlugin extends CordovaPlugin {
     // permissions
@@ -149,6 +152,8 @@ public class BLECentralPlugin extends CordovaPlugin {
     public int bondedState;
     BluetoothDevice device;
 
+    private FirebaseAnalytics mFirebaseAnalytics;
+
     Map<Integer, String> bluetoothStates = new Hashtable<Integer, String>() {{
         put(BluetoothAdapter.STATE_OFF, "off");
         put(BluetoothAdapter.STATE_TURNING_OFF, "turningOff");
@@ -178,6 +183,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
     @Override
     protected void pluginInitialize() {
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(cordova.getContext());
         if (COMPILE_SDK_VERSION == -1) {
             Context context = cordova.getContext();
             COMPILE_SDK_VERSION = context.getApplicationContext().getApplicationInfo().targetSdkVersion;
@@ -601,7 +607,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
             // just low energy devices (filters out classic and unknown devices)
             if (type == DEVICE_TYPE_LE || type == DEVICE_TYPE_DUAL) {
-                Peripheral p = new Peripheral(device);
+                Peripheral p = new Peripheral(device, mFirebaseAnalytics);
                 bonded.put(p.asJSONObject());
             }
         }
@@ -644,11 +650,67 @@ public class BLECentralPlugin extends CordovaPlugin {
         } else if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
             device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             bondedState = device.getBondState();
+            onBondStateChangedEvent(intent);
             sendBluetoothBondStateChange(bondedState);
             if(pairingCallback != null){
                 pairingCallback.onPairingCompleted(device, bondedState);
             }
         }
+    }
+
+    /**
+     * Logging of pairing/bonding state changes action
+     * BOND_NONE --> BOND_BONDING: Pairing started
+     * BOND_BONDING --> BOND_NONE : Pairing error, as pairing was not completed to BOND_BONDED status
+     * BOND_BONDING --> BOND_BONDED : Pairing completed
+     **/
+    private void onBondStateChangedEvent(Intent intent) {
+        int newBondState = intent.getExtras().getInt(BluetoothDevice.EXTRA_BOND_STATE);
+        int previousBondState = intent.getExtras().getInt(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE);
+        Timber.i("Device " + this.device.getName() + " Previous bond state: " + previousBondState + " --> New bond state: " + newBondState);
+
+        switch (newBondState) {
+            case BluetoothDevice.BOND_NONE:
+                /* Possible pairing failed case as Pairing state changed from BOND_BONDING to BOND_NONE */
+                if (previousBondState == BluetoothDevice.BOND_BONDING) {
+                    Timber.i("Device " + this.device.getName() + "--> Possible Pairing Failed as pairing state changed from BOND_BONDING to BOND_NONE");
+                    Bundle eventBundle = getFirebaseInfoBundle();
+                    mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_FAILURE.toString(), eventBundle);
+                }
+                break;
+            case BluetoothDevice.BOND_BONDING:
+                /* Pairing started for device */
+                Timber.i("Pairing Initiated with Device :" + this.device.getName());
+                break;
+            case BluetoothDevice.BOND_BONDED:
+                Timber.i("Device paired successfully :" + this.device.getName());
+                Bundle eventBundle = getFirebaseInfoBundle();
+                mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_PAIRING_SUCCESS.toString(), eventBundle);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private Bundle getFirebaseInfoBundle() {
+        Bundle bundle = new Bundle();
+        SupportedPeripherals templateDevice = SupportedPeripherals.findMatchingDevice(this.device);
+        if(templateDevice!=null) {
+            Timber.i(templateDevice.getDisplay());
+            Timber.i(templateDevice.getPeripheralType());
+            bundle.putString("DEVICE_NAME", templateDevice.getDisplay());
+            bundle.putString("PERIPHERAL_TYPE", templateDevice.getPeripheralType());
+        } else {
+            bundle.putString("DEVICE_NAME", this.device.getName());
+        }
+        if(peripherals!=null) {
+            Peripheral scannedInstance = peripherals.get(this.device.getAddress());
+            if (scannedInstance != null) {
+                Timber.i("Scanned instance  RSSI " + scannedInstance.advertisingRSSI);
+                bundle.putInt("BT_RSSI", scannedInstance.advertisingRSSI);
+            }
+        }
+        return bundle;
     }
 
     private void sendBluetoothStateChange(int state) {
@@ -792,7 +854,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
         if (!peripherals.containsKey(macAddress) && BLECentralPlugin.this.bluetoothAdapter.checkBluetoothAddress(macAddress)) {
             BluetoothDevice device = BLECentralPlugin.this.bluetoothAdapter.getRemoteDevice(macAddress);
-            Peripheral peripheral = new Peripheral(device);
+            Peripheral peripheral = new Peripheral(device, mFirebaseAnalytics);
             peripherals.put(macAddress, peripheral);
         }
 
@@ -834,7 +896,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 Timber.i("Device Mac Address %s", device);
                 Timber.i("Bond State %s", bondedState);
 
-                peripheral = new Peripheral(device);
+                peripheral = new Peripheral(device, mFirebaseAnalytics);
                 peripherals.put(device.getAddress(), peripheral);
             } else {
                 callbackContext.error(macAddress + " is not a valid MAC address.");
@@ -852,7 +914,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                 || pairedDevice.getName().contains("IR20") || pairedDevice.getName().contains("TAIDOC TD8255")
                 || pairedDevice.getName().contains("TD1107") || pairedDevice.getName().contains("Nonin3230")
         )) {
-            Timber.i("Bond State for Version > 29" + peripheral.getDevice().getBondState());
+            Timber.i("Bond State for Version > 29 : " + peripheral.getDevice().getBondState());
             if (peripheral.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
                 peripheral.connect(callbackContext, cordova.getActivity(), false);// TODO setting this to false to stop auto connecting
             } else {
@@ -862,7 +924,7 @@ public class BLECentralPlugin extends CordovaPlugin {
                     Timber.i("onPairingComplete Callback bond state:" + bondedState);
                     if(bondedState == BluetoothDevice.BOND_BONDED) {
                         Timber.i("onPairingComplete Initiate GattConnect:" + btDevice);
-                        Peripheral peripheralDevice = new Peripheral(btDevice);
+                        Peripheral peripheralDevice = new Peripheral(btDevice, mFirebaseAnalytics);
                         peripheralDevice.connect(callbackContext, cordova.getActivity(), false); // TODO setting this to false to stop auto connecting
                     }
                 });
@@ -873,6 +935,8 @@ public class BLECentralPlugin extends CordovaPlugin {
         }
 
     }
+
+
 
     private void disconnect(CallbackContext callbackContext, String macAddress) {
         Peripheral peripheral = peripherals.get(macAddress);
@@ -1163,7 +1227,7 @@ public class BLECentralPlugin extends CordovaPlugin {
 
             if (!alreadyReported) {
 
-                Peripheral peripheral = new Peripheral(device, result.getRssi(), result.getScanRecord().getBytes());
+                Peripheral peripheral = new Peripheral(device, result.getRssi(), result.getScanRecord().getBytes(), mFirebaseAnalytics);
                 peripherals.put(device.getAddress(), peripheral);
 
                 if (discoverCallback != null) {
@@ -1490,5 +1554,4 @@ public class BLECentralPlugin extends CordovaPlugin {
     private void resetScanOptions() {
         this.reportDuplicates = false;
     }
-
 }

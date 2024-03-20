@@ -519,19 +519,8 @@ public class Peripheral extends BluetoothGattCallback {
             Timber.i("onConnectionStateChange STATE_DISCONNECTED " + getGattDeviceName(gatt));
 
             // Firebase disconnect event
-            Bundle bundle = new Bundle();
-            SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES templateDevice = SUPPORTED_PERIPHERAL_TEMPLATE.TEMPLATE_DEVICES.findMatchingDevice(this.device);
-            Timber.i(templateDevice.getDisplay());
-            Timber.i(templateDevice.getPeripheralType());
-            bundle.putString("DEVICE_NAME", /*this.device.getName()*/ templateDevice.getDisplay());
-            bundle.putString("PERIPHERAL_TYPE", /*this.device.getType()*/ templateDevice.getPeripheralType());
-            // bundle.putString("DEVICE_NAME", this.getGattDeviceName(gatt));
-            bundle.putString("STATE", "DISCONNECTED");
-            bundle.putString("PAIRING_STATE", isDevicePaired());
-            if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-                bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI)); // TODO
-            }
-            bundle.putInt("ERROR_CODE", status); // disconnection status code
+            Bundle bundle = getFirebaseInfoBundle("DISCONNECTED");
+            bundle.putString("ERROR_CODE", String.valueOf(status)); // disconnection status code
             mFirebaseAnalytics.logEvent(BTAnalyticsLogTypes.BT_CONNECTION.toString(), bundle);
 
             if(DEVICES_TO_ESCAPE_RETRY.notMatches(gatt.getDevice())) { // Retry is allowed for the device
@@ -626,7 +615,7 @@ public class Peripheral extends BluetoothGattCallback {
         bundle.putString("STATE", isConnected);
         bundle.putString("PAIRING_STATE", isDevicePaired());
         if (advertisingRSSI != FAKE_PERIPHERAL_RSSI) {
-            bundle.putString("BT_RSSI", Integer.toString(this.advertisingRSSI)); // TODO
+             bundle.putInt("BT_RSSI", this.advertisingRSSI);
         }
         return bundle;
     }

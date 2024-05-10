@@ -26,7 +26,8 @@
                 <param name="ios-package" value="BLECentralPlugin" onload="$IOS_INIT_ON_LOAD"/>
             </feature>
         </config-file>
-
+        <source-file src="src/ios/PeripheralInformation.swift" target-dir="BLECentralPlugin" />
+        <source-file src="src/ios/SupportedPeripherals.swift" target-dir="BLECentralPlugin" />
         <header-file src="src/ios/BLECentralPlugin.h" target-dir="BLECentralPlugin" />
         <source-file src="src/ios/BLECentralPlugin.m" target-dir="BLECentralPlugin" />
 
@@ -53,12 +54,13 @@
         <config-file target="config.xml" parent="/*">
             <preference name="bluetooth_restore_state" value="$BLUETOOTH_RESTORE_STATE"/>
         </config-file>
+        <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/>
     </platform>
 
     <platform name="android">
-        
+
         <preference name="ACCESS_BACKGROUND_LOCATION" default="false" />
-        
+
         <config-file target="res/xml/config.xml" parent="/widget">
             <feature name="BLE">
                 <param name="android-package" value="com.megster.cordova.ble.central.BLECentralPlugin"/>

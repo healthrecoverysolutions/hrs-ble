@@ -18,6 +18,8 @@
 
 #import "BLECentralPlugin.h"
 #import <Cordova/CDV.h>
+#import "PatientConnect_Mobile-Swift.h"
+#import <FirebaseAnalytics/FirebaseAnalytics.h>
 
 @interface BLECentralPlugin() {
     NSDictionary *bluetoothStates;
@@ -31,6 +33,16 @@
 
 @synthesize manager;
 @synthesize peripherals;
+
+NSString * const kEVENT_BT_CONNECTION_CONST = @"BT_CONNECTION";
+NSString * const kDEVICE_NAME_CONST = @"DEVICE_NAME";
+NSString * const kPERIPHERAL_TYPE_CONST = @"PERIPHERAL_TYPE";
+NSString * const kBT_STATE_CONST = @"STATE";
+NSString * const kBT_STATE_CONNECTED_CONST = @"CONNECTED";
+NSString * const kBT_STATE_DISCONNECTED_CONST = @"DISCONNECTED";
+NSString * const kBT_RSSI_CONST = @"BT_RSSI";
+NSString * const kBT_ERROR_CODE_CONST = @"ERROR_CODE";
+NSString * const kBT_PAIRING_STATE_CONST = @"PAIRING_STATE";
 
 - (void)pluginInitialize {
     NSLog(@"Cordova BLE Central Plugin");
@@ -99,7 +111,7 @@
             for (id uuid in restoredScanServices) {
                 [uuids addObject:[uuid UUIDString]];
             }
-            
+
             state[@"scanServiceUUIDs"] = uuids;
         }
 
@@ -159,15 +171,15 @@
     }
 
     NSString *uuid = [command argumentAtIndex:0];
-    
+
     CBPeripheral *peripheral = [self findPeripheralByUUID:uuid];
     if (!peripheral) {
         peripheral = [self retrievePeripheralWithUUID:uuid];
     }
-    
+
     if (peripheral) {
         NSLog(@"Autoconnecting to peripheral with UUID : %@", uuid);
-        
+
         [connectCallbacks setObject:[command.callbackId copy] forKey:[peripheral uuidAsString]];
         [manager connectPeripheral:peripheral options:nil];
     } else {
@@ -177,7 +189,7 @@
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
-    
+
 }
 
 // disconnect: function (device_id, success, failure) {
@@ -541,16 +553,16 @@
     NSLog(@"peripheralsWithIdentifiers");
     NSArray *identifierUUIDStrings = [command argumentAtIndex:0];
     NSArray<NSUUID *> *identifiers = [self uuidStringsToNSUUIDs:identifierUUIDStrings];
-    
+
     NSArray<CBPeripheral *> *foundPeripherals = [manager retrievePeripheralsWithIdentifiers:identifiers];
     // TODO are any of these connected?
     NSMutableArray<NSDictionary *> *found = [NSMutableArray new];
-    
+
     for (CBPeripheral *peripheral in foundPeripherals) {
         [peripherals addObject:peripheral];   // TODO do we save these?
         [found addObject:[peripheral asDictionary]];
     }
-    
+
     CDVPluginResult *pluginResult = nil;
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:found];
     NSLog(@"Peripherals with identifiers %@ %@", identifierUUIDStrings, found);
@@ -573,7 +585,7 @@
         }
         NSLog(@"Cleared callbacks for L2CAP channel key %@", key);
     }
-    
+
     CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
@@ -693,7 +705,18 @@
 
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
     NSLog(@"didConnectPeripheral");
-
+    NSDictionary *deviceInfo = [PeripheralInformation findMatchingDevice:peripheral];
+    if (![deviceInfo isEqual: [NSNull null]]){
+        NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
+        NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
+        [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:@{
+            kDEVICE_NAME_CONST: deviceName,
+            kPERIPHERAL_TYPE_CONST: deviceType,
+            kBT_STATE_CONST: kBT_STATE_CONNECTED_CONST,
+            kBT_RSSI_CONST: peripheral.savedRSSI,
+            kBT_PAIRING_STATE_CONST: @"NA"
+        }];
+    }
     peripheral.delegate = self;
 
     // NOTE: it's inefficient to discover all services
@@ -704,7 +727,18 @@
 
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
     NSLog(@"didDisconnectPeripheral");
-
+    NSDictionary *deviceInfo = [PeripheralInformation findMatchingDevice:peripheral];
+    if (![deviceInfo isEqual: [NSNull null]]){
+        NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
+        NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
+        [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:@{
+            kDEVICE_NAME_CONST: deviceName,
+            kPERIPHERAL_TYPE_CONST: deviceType,
+            kBT_STATE_CONST: kBT_STATE_DISCONNECTED_CONST,
+            kBT_ERROR_CODE_CONST: [NSString stringWithFormat:@"%ld", (long)error.code],
+            kBT_PAIRING_STATE_CONST: @"NA"
+        }];
+    }
     NSString *connectCallbackId = [connectCallbacks valueForKey:[peripheral uuidAsString]];
     [connectCallbacks removeObjectForKey:[peripheral uuidAsString]];
     [self cleanupOperationCallbacks:peripheral withResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Peripheral disconnected"]];
@@ -819,14 +853,14 @@
     if(readCallbackId) {
         NSData *data = characteristic.value; // send RAW data to Javascript
         CDVPluginResult *pluginResult = nil;
-        
+
         if (error) {
             NSLog(@"%@", error);
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]];
         } else {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArrayBuffer:data];
         }
-        
+
         [self.commandDelegate sendPluginResult:pluginResult callbackId:readCallbackId];
 
         [readCallbacks removeObjectForKey:key];
@@ -839,7 +873,7 @@
     NSString *stopNotificationCallbackId = [stopNotificationCallbacks objectForKey:key];
 
     CDVPluginResult *pluginResult = nil;
-    
+
     if (stopNotificationCallbackId) {
         if (!characteristic.isNotifying) {
             // successfully stopped notifications
@@ -866,7 +900,7 @@
             // successfully started notifications
             // notification start succeeded, move the callback to the value notifications dict
             [notificationCallbacks setObject:startNotificationCallbackId forKey:key];
-            
+
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"registered"];
             [pluginResult setKeepCallbackAsBool:TRUE]; // keep for notification
         } else {

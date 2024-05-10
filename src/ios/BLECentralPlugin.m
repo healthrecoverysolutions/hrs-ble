@@ -18,7 +18,7 @@
 
 #import "BLECentralPlugin.h"
 #import <Cordova/CDV.h>
-#import "PatientConnect_Mobile-Swift.h"
+#import "SupportedBLEPeripherals.h"
 #import <FirebaseAnalytics/FirebaseAnalytics.h>
 
 @interface BLECentralPlugin() {
@@ -705,7 +705,7 @@ NSString * const kBT_PAIRING_STATE_CONST = @"PAIRING_STATE";
 
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
     NSLog(@"didConnectPeripheral");
-    NSDictionary *deviceInfo = [PeripheralInformation findMatchingDevice:peripheral];
+    NSDictionary *deviceInfo = [SupportedBLEPeripherals findMatchingDeviceInfo: peripheral];
     if (![deviceInfo isEqual: [NSNull null]]){
         NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
         NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
@@ -727,7 +727,7 @@ NSString * const kBT_PAIRING_STATE_CONST = @"PAIRING_STATE";
 
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
     NSLog(@"didDisconnectPeripheral");
-    NSDictionary *deviceInfo = [PeripheralInformation findMatchingDevice:peripheral];
+    NSDictionary *deviceInfo = [SupportedBLEPeripherals findMatchingDeviceInfo:peripheral];
     if (![deviceInfo isEqual: [NSNull null]]){
         NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
         NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];

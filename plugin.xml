@@ -26,8 +26,7 @@
                 <param name="ios-package" value="BLECentralPlugin" onload="$IOS_INIT_ON_LOAD"/>
             </feature>
         </config-file>
-        <source-file src="src/ios/PeripheralInformation.swift" target-dir="BLECentralPlugin" />
-        <source-file src="src/ios/SupportedPeripherals.swift" target-dir="BLECentralPlugin" />
+        <source-file src="src/ios/SupportedBLEPeripherals.h" target-dir="BLECentralPlugin" />
         <header-file src="src/ios/BLECentralPlugin.h" target-dir="BLECentralPlugin" />
         <source-file src="src/ios/BLECentralPlugin.m" target-dir="BLECentralPlugin" />
 

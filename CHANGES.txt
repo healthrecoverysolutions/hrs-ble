@@ -1,3 +1,6 @@
+= 1.6.2 =
+iOS: Added native iOS events for BLE operations.
+
 = 1.6.1 =
 No changes - republish only
 
@@ -45,7 +48,7 @@ Add support for iOS state restoration. This is opt-in, see README for usage deta
 Turn API misuse warnings on iOS into reported errors to prevent dead scans #828
 
 = 1.4.1 =
-Add additional options to startScanWithOptions() on Android #835 Thanks helllamer 
+Add additional options to startScanWithOptions() on Android #835 Thanks helllamer
 Fix some instances where the Android command loop locks up #847 #830 Thanks doug-a-brunner
 Improve documentation around requestConnectionPriority usage #877
 
@@ -63,7 +66,7 @@ Add new location permssions Android 10 (API29) #771 Thanks tiagoblackcode, subra
 = 1.2.5 =
 Add setPin method for Android #718 Thanks untilbit
 Give the user feedback after an MTU size request #715 Thanks agren
-Add requestConnectionPriority for Android #714 #713 Thanks agren vamshik113 
+Add requestConnectionPriority for Android #714 #713 Thanks agren vamshik113
 
 = 1.2.4 =
 Add sequence numbers to notifications on Android to handle out of order notifications. Android #625 #656 Thanks timburke

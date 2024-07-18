@@ -614,7 +614,7 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        Timber.i("onCharacteristicChanged %s", characteristic);
+        Timber.i("onCharacteristicChanged %s", characteristic.getUuid());
 
         SequentialCallbackContext callback = notificationCallbacks.get(generateHashKey(characteristic));
 
@@ -626,7 +626,7 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-        Timber.i("onCharacteristicRead %s", characteristic);
+        Timber.i("onCharacteristicRead %s", characteristic.getUuid());
 
         synchronized(this) {
             if (readCallback != null) {
@@ -646,7 +646,7 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-        Timber.i("onCharacteristicWrite %s", characteristic);
+        Timber.i("onCharacteristicWrite %s", characteristic.getUuid());
 
         synchronized(this) {
             if (writeCallback != null) {
@@ -666,7 +666,7 @@ public class Peripheral extends BluetoothGattCallback {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
-        Timber.i("onDescriptorWrite %s", descriptor);
+        Timber.i("onDescriptorWrite %s", descriptor.getUuid());
         if (descriptor.getUuid().equals(CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)) {
             BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
             String key = generateHashKey(characteristic);

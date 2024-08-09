@@ -69,7 +69,7 @@ static const DDLogLevel ddLogLevel = DDLogLevelInfo;
             [[SupportedBLEPeripherals alloc] initWithDisplay:@"Foracare TNG SP02" peripheralType:@"pulseox" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(.*SPO2.*$).*" options:0 error:nil]],
             [[SupportedBLEPeripherals alloc] initWithDisplay:@"Nonin Medical Inc 9560" peripheralType:@"pulseox" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(.*Nonin_Medical.*$).*" options:0 error:nil]],
             [[SupportedBLEPeripherals alloc] initWithDisplay:@"Nonin 3230" peripheralType:@"pulseox" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(^Nonin3230.*$).*" options:0 error:nil]],
-            [[SupportedBLEPeripherals alloc] initWithDisplay:@"NiproBGM" peripheralType:@"glucose" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(.*Nipro*$).*" options:0 error:nil]],
+            [[SupportedBLEPeripherals alloc] initWithDisplay:@"NiproBGM" peripheralType:@"glucose" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(.*Nipro.*$).*" options:0 error:nil]],
             [[SupportedBLEPeripherals alloc] initWithDisplay:@"TRUEAIR" peripheralType:@"glucose" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(.*TRUEAIR*$).*" options:0 error:nil]],
             [[SupportedBLEPeripherals alloc] initWithDisplay:@"TEST-N-GO" peripheralType:@"glucose" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(.*TEST-N-GO*$).*" options:0 error:nil]],
             [[SupportedBLEPeripherals alloc] initWithDisplay:@"A&D UA-651" peripheralType:@"bloodpressure" namePattern:[NSRegularExpression regularExpressionWithPattern:@"(.*UA-651.*$).*" options:0 error:nil]],

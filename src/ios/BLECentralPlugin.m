@@ -706,7 +706,7 @@ NSString * const kBT_PAIRING_STATE_CONST = @"PAIRING_STATE";
 - (void)centralManager:(CBCentralManager *)central didConnectPeripheral:(CBPeripheral *)peripheral {
     NSLog(@"didConnectPeripheral");
     NSDictionary *deviceInfo = [SupportedBLEPeripherals findMatchingDeviceInfo: peripheral];
-    if (deviceInfo){
+    if (![deviceInfo isEqual: [NSNull null]]){
         NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
         NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
         [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:@{
@@ -728,7 +728,7 @@ NSString * const kBT_PAIRING_STATE_CONST = @"PAIRING_STATE";
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
     NSLog(@"didDisconnectPeripheral");
     NSDictionary *deviceInfo = [SupportedBLEPeripherals findMatchingDeviceInfo:peripheral];
-    if (deviceInfo){
+    if (![deviceInfo isEqual: [NSNull null]]){
         NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
         NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
         [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:@{

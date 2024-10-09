@@ -707,15 +707,24 @@ NSString * const kBT_PAIRING_STATE_CONST = @"PAIRING_STATE";
     NSLog(@"didConnectPeripheral");
     NSDictionary *deviceInfo = [SupportedBLEPeripherals findMatchingDeviceInfo: peripheral];
     if (deviceInfo){
-        NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
-        NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
-        [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:@{
-            kDEVICE_NAME_CONST: deviceName,
-            kPERIPHERAL_TYPE_CONST: deviceType,
-            kBT_STATE_CONST: kBT_STATE_CONNECTED_CONST,
-            kBT_RSSI_CONST: peripheral.savedRSSI,
-            kBT_PAIRING_STATE_CONST: @"NA"
-        }];
+        @try {
+            NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
+            NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
+            NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+            [parameters addEntriesFromDictionary:@{
+                kDEVICE_NAME_CONST: deviceName,
+                kPERIPHERAL_TYPE_CONST: deviceType,
+                kBT_STATE_CONST: kBT_STATE_CONNECTED_CONST,
+                kBT_PAIRING_STATE_CONST: @"NA"
+            }];
+            if (peripheral && peripheral.savedRSSI) {
+                [parameters setValue:peripheral.savedRSSI forKey:kBT_RSSI_CONST];
+            }
+            NSLog(@"parameters %@", parameters);
+            [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:parameters];
+        } @catch (NSException *exception) {
+            NSLog(@"Caught exception in logging FIRAnalytics bluetooth connection event %@", exception);
+        }
     }
     peripheral.delegate = self;
 
@@ -729,15 +738,19 @@ NSString * const kBT_PAIRING_STATE_CONST = @"PAIRING_STATE";
     NSLog(@"didDisconnectPeripheral");
     NSDictionary *deviceInfo = [SupportedBLEPeripherals findMatchingDeviceInfo:peripheral];
     if (deviceInfo){
-        NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
-        NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
-        [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:@{
-            kDEVICE_NAME_CONST: deviceName,
-            kPERIPHERAL_TYPE_CONST: deviceType,
-            kBT_STATE_CONST: kBT_STATE_DISCONNECTED_CONST,
-            kBT_ERROR_CODE_CONST: [NSString stringWithFormat:@"%ld", (long)error.code],
-            kBT_PAIRING_STATE_CONST: @"NA"
-        }];
+        @try {
+            NSString *deviceName = [deviceInfo valueForKey:@"DeviceName"];
+            NSDictionary *deviceType = [deviceInfo valueForKey:@"DeviceType"];
+            [FIRAnalytics logEventWithName:kEVENT_BT_CONNECTION_CONST parameters:@{
+                kDEVICE_NAME_CONST: deviceName,
+                kPERIPHERAL_TYPE_CONST: deviceType,
+                kBT_STATE_CONST: kBT_STATE_DISCONNECTED_CONST,
+                kBT_ERROR_CODE_CONST: [NSString stringWithFormat:@"%ld", (long)error.code],
+                kBT_PAIRING_STATE_CONST: @"NA"
+            }];
+        } @catch (NSException *exception) {
+            NSLog(@"Caught exception in logging FIRAnalytics bluetooth disconnection event %@", exception);
+        }
     }
     NSString *connectCallbackId = [connectCallbacks valueForKey:[peripheral uuidAsString]];
     [connectCallbacks removeObjectForKey:[peripheral uuidAsString]];

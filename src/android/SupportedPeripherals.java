@@ -16,6 +16,7 @@ public enum SupportedPeripherals {
     TNG_SCALE("TNG 550", "weight","(.*TNG SCALE.*$).*"),
     UC_351("A&D UC-351", "weight","(.*UC-351.*$).*"),
     UC_352("A&D UC-352 BLE", "weight","(.*UC-352.*$).*"),
+    UC_356("A&D UC-356", "weight","(.*UC-356.*$).*"),
     UC_355("A&D UC-355", "weight", "(.*UC-355.*$).*"),
     WELCH_SC100("Welch Allyn Scale", "weight","(.*SC100.*$).*"),
     TD8255("Taidoc TD8255", "pulseox","(.*TD8255.*$).*"),

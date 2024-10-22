@@ -911,7 +911,7 @@ public class BLECentralPlugin extends CordovaPlugin {
         pairedDevice = bluetoothAdapter.getRemoteDevice(macAddress);
 
         if (COMPILE_SDK_VERSION >= 29 && Build.VERSION.SDK_INT >= 29 && (pairedDevice.getName().contains("UA-651") || pairedDevice.getName().contains("UC-352")
-                || pairedDevice.getName().contains("IR20") || pairedDevice.getName().contains("TAIDOC TD8255")
+                || pairedDevice.getName().contains("IR20") || pairedDevice.getName().contains("TAIDOC TD8255") || pairedDevice.getName().contains("UC-356")
                 || pairedDevice.getName().contains("TD1107") || pairedDevice.getName().contains("Nonin3230")
         )) {
             Timber.i("Bond State for Version > 29 : " + peripheral.getDevice().getBondState());
